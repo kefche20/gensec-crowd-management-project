@@ -375,10 +375,11 @@ void loop() {
         {
             people_in_queue--;
             Serial.println("removed person");
+            something_changed = true;
         }
         if(gate_status == STATUS_OPENED && something_changed)
         {
-            // Please implement function according to heartbeat! :)
+            // Please implement function according to heartbeat!
             char data[100];
             sprintf(data, "&%s-NUMOFPEOPLE+%d;", MY_ID.c_str(), people_in_queue);
             mqttClient.publish("airportDemo", data);
