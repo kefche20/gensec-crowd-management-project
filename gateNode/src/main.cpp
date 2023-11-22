@@ -246,11 +246,6 @@ void ReceiveAndParseData(byte *payload, unsigned int length)
                                 Serial.println("DEMO_alloc failed");
                                 break;
                                 //Fatal error: The string does not contain a valid integer
-                            }
-                            catch (const std::out_of_range& e) 
-                            {
-                                Serial.println("DEMO_alloc failed");
-                                break;
                                 //Fatal error: The integer is out of range
                             }
                         }
