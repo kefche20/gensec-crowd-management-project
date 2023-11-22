@@ -29,7 +29,7 @@ const int mqtt_port = 1883;
 PubSubClient mqttClient(espClient);
 
 // Gate global variables
-const std::string MY_ID = "001";
+const std::string MY_ID = "002";
 constexpr int MY_MAX_PEOPLE = 10;
 volatile unsigned short people_in_queue = 0;
 volatile short gate_status = STATUS_CLOSED;
@@ -372,7 +372,7 @@ void loop() {
         if(serial_command == 'R')
         {
             people_in_queue--;
-            Serial.println("removed person");
+            Serial.println("rAemoved person");
         }
         if(gate_status == STATUS_OPENED)
         {
