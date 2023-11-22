@@ -362,24 +362,27 @@ void loop() {
     mqttClient.loop();
     while(Serial.available() > 0)
     {
+        bool something_changed = false;
         char serial_command = 'L';
         serial_command = Serial.read();
         if(serial_command == 'A')
         {
             people_in_queue++;
             Serial.println("added person");
+            something_changed = true;
         }
         if(serial_command == 'R')
         {
             people_in_queue--;
-            Serial.println("rAemoved person");
+            Serial.println("removed person");
         }
-        if(gate_status == STATUS_OPENED)
+        if(gate_status == STATUS_OPENED && something_changed)
         {
             // Please implement function according to heartbeat!
             char data[100];
             sprintf(data, "&%s-NUMOFPEOPLE+%d;", MY_ID.c_str(), people_in_queue);
             mqttClient.publish("airportDemo", data);
+            something_changed = false;
         }
     }
 
