@@ -16,7 +16,7 @@ const char *ALLOC = "ALLOC";
 const char *REGISTER = "REGISTER";
 
 // WiFi variables
-const char *ssid = "14 Pro"; // Enter your WiFi name
+const char *ssid = "ThisOne"; // Enter your WiFi name
 const char *password = "123456789";  // Enter WiFi password
 WiFiClient espClient;
 
