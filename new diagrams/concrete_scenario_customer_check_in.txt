@@ -1,0 +1,41 @@
+title Customer check in scenario
+
+participant User check_in
+participant Divider
+participant Gate 1
+participant Gate 2
+participant Gate 3
+
+
+activate User check_in
+activate Divider
+activate Gate 1
+activate Gate 2
+activate Gate 3
+
+
+
+
+group heartbeat 
+
+Divider<-Gate 1:send_occupancy(gateId,10)
+Divider<-Gate 2:send_occupancy(gateId,5)
+Divider<-Gate 3:send_occupancy(gateId,3)
+
+end
+
+
+
+User check_in->Divider: <<scan ticket>>
+Divider->Divider:check_lowest_occupancy()\n
+Divider->Gate 3:send_passenger(GateId,1) 
+
+
+
+group heartbeat 
+
+Divider<-Gate 1:send_occupancy(gateId,10)
+Divider<-Gate 2:send_occupancy(gateId,5)
+Divider<-Gate 3:send_occupancy(gateId,4)
+
+end
