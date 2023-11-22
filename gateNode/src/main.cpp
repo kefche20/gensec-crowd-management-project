@@ -13,6 +13,7 @@ const char *CLOSEGATE = "CLOSEGATE";
 const char *NUMOFPEOPLE = "NUMOFPEOPLE";
 const char *EMERGENCY = "EMERGENCY";
 const char *ALLOC = "ALLOC";
+const char *REGISTER = "REGISTER";
 
 // WiFi variables
 const char *ssid = "14 Pro"; // Enter your WiFi name
@@ -197,11 +198,13 @@ void ReceiveAndParseData(byte *payload, unsigned int length)
             {
                 // code to refresh amount of data for other gates
                 current_symbol += strlen(NUMOFPEOPLE);
+                break;
             }
             else if(strcasestr((char*)payload, EMERGENCY))
             {
                 // code to close gate
                 current_symbol += strlen(EMERGENCY);
+                break;
             }
             else if(strcasestr((char*)payload, ALLOC))
             {
@@ -266,6 +269,12 @@ void ReceiveAndParseData(byte *payload, unsigned int length)
                     break;
                     //wrong message, ignore
                 }
+            }
+            else if(strcasestr((char*)payload, REGISTER))
+            {
+                // not for me
+                current_symbol += strlen(EMERGENCY);
+                break;
             }
             else
             {
@@ -342,15 +351,40 @@ void setup() {
         }
     }
     mqttClient.subscribe(topic);
+
+    // Register in the divider system
+    // Please implement separate function!
+    delay(1000);
+    char data[100];
+    sprintf(data, "&%s-REGISTER;", MY_ID.c_str());
+    mqttClient.publish("airportDemo", data);
 }
 
 
 
 void loop() {
     mqttClient.loop();
-    if(millis()%10000 == 0)
+    while(Serial.available() > 0)
     {
-
+        char serial_command = 'L';
+        serial_command = Serial.read();
+        if(serial_command == 'A')
+        {
+            people_in_queue++;
+            Serial.println("added person");
+        }
+        if(serial_command == 'R')
+        {
+            people_in_queue--;
+            Serial.println("removed person");
+        }
+        if(gate_status == STATUS_OPENED)
+        {
+            // Please implement function according to heartbeat!
+            char data[100];
+            sprintf(data, "&%s-NUMOFPEOPLE+%d;", MY_ID.c_str(), people_in_queue);
+            mqttClient.publish("airportDemo", data);
+        }
     }
 
 }
