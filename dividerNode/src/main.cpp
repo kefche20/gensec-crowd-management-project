@@ -304,6 +304,11 @@ void ReceiveAndParseData(byte *payload, unsigned int length)
               // Solution for demo. Please replace with class
               // usage as soon as possible, and implement
               // the already done functions.
+              if(received_id == ID_GATE1 || received_id == ID_GATE2 || received_id == ID_GATE3)
+              {
+                Serial.println("DEMO_gate already registered");
+                break;
+              }
               if(ID_GATE1 == "")
               {
                 ID_GATE1 = received_id;
