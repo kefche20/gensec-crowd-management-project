@@ -38,8 +38,11 @@ void ReceiveAndParseData(byte *payload, unsigned int length);
 void connectToWiFi();
 void callback(char *topic, byte *payload, unsigned int length);
 void setupMQTT();
+
+//Gate action folllowing scenario 
 void OpenGate();
 void CloseGate();
+
 void Emergency();
 void AllocatePeople();
 
@@ -78,15 +81,19 @@ void CloseGate()
         // ^^ TEMP SOLUTION
     }
 }
+
 void Emergency()
 {
     people_in_queue = 0;
     gate_status = STATUS_OPENED;
 }
+
 void AllocatePeople(int number_of_people)
 {
 
 }
+
+
 void ReceiveAndParseData(byte *payload, unsigned int length)
 // This function is called when data is received from the MQTT callback.
 // Goal is to act accordingly of the command/data received.
