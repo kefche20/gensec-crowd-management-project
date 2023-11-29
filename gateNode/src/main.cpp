@@ -16,8 +16,8 @@ const char *ALLOC = "ALLOC";
 const char *REGISTER = "REGISTER";
 
 // WiFi variables
-const char *ssid = "ThisOne"; // Enter your WiFi name
-const char *password = "123456789";  // Enter WiFi password
+const char *ssid = "ThisOne";       // Enter your WiFi name
+const char *password = "123456789"; // Enter WiFi password
 WiFiClient espClient;
 
 // MQTT Broker variables
@@ -40,7 +40,7 @@ void connectToWiFi();
 void callback(char *topic, byte *payload, unsigned int length);
 void setupMQTT();
 
-//Gate action folllowing scenario 
+// Gate action folllowing scenario
 void OpenGate();
 void CloseGate();
 
@@ -51,7 +51,7 @@ void AllocatePeople();
 void OpenGate()
 {
 
-    if(gate_status == STATUS_CLOSED)
+    if (gate_status == STATUS_CLOSED)
     {
         gate_status = STATUS_OPENED;
         people_in_queue = 0;
@@ -66,13 +66,13 @@ void OpenGate()
 }
 void CloseGate()
 {
-    if(people_in_queue != 0)
+    if (people_in_queue != 0)
     {
         // ERROR: Gate has people inside and cannot close! Please solve the edge case
         return;
     }
-    
-    if(gate_status == STATUS_OPENED)
+
+    if (gate_status == STATUS_OPENED)
     {
         gate_status = STATUS_CLOSED;
     }
@@ -92,9 +92,7 @@ void Emergency()
 
 void AllocatePeople(int number_of_people)
 {
-
 }
-
 
 void ReceiveAndParseData(byte *payload, unsigned int length)
 // This function is called when data is received from the MQTT callback.
@@ -103,50 +101,50 @@ void ReceiveAndParseData(byte *payload, unsigned int length)
     unsigned int current_symbol = 0;
     std::string received_id = "";
     std::string destination_id = "";
-    while(current_symbol<length)
+    while (current_symbol < length)
     {
-        if(payload[current_symbol] == '&' && current_symbol == 0)
+        if (payload[current_symbol] == '&' && current_symbol == 0)
         {
-            //good start
+            // good start
             current_symbol++;
         }
-        else if(payload[current_symbol] == ';')
+        else if (payload[current_symbol] == ';')
         {
-            //end of command
+            // end of command
             break;
         }
-        else if(current_symbol == 1)
+        else if (current_symbol == 1)
         {
-            //get ID
+            // get ID
             received_id += payload[current_symbol++];
             received_id += payload[current_symbol++];
             received_id += payload[current_symbol++];
         }
-        else if(current_symbol == 4)
+        else if (current_symbol == 4)
         {
-            if(payload[current_symbol] == '-')
+            if (payload[current_symbol] == '-')
             {
-                //good
+                // good
                 current_symbol++;
             }
             else
             {
-                //fatal error
+                // fatal error
                 break;
             }
         }
-        else if(current_symbol == 5)
+        else if (current_symbol == 5)
         {
-            if(strcasestr((char*)payload, OPENGATE))
+            if (strcasestr((char *)payload, OPENGATE))
             {
                 current_symbol += strlen(OPENGATE);
-                if(payload[current_symbol] == '-')
+                if (payload[current_symbol] == '-')
                 {
                     current_symbol++;
                     destination_id += payload[current_symbol++];
                     destination_id += payload[current_symbol++];
                     destination_id += payload[current_symbol++];
-                    if(destination_id == MY_ID)
+                    if (destination_id == MY_ID)
                     {
                         Serial.println("DEMO_openinggate");
                         OpenGate();
@@ -156,26 +154,26 @@ void ReceiveAndParseData(byte *payload, unsigned int length)
                     {
                         Serial.println("DEMO_open gate not for me");
                         break;
-                        //ignore, not for me
+                        // ignore, not for me
                     }
                 }
                 else
                 {
                     Serial.println("DEMO_open gate not finished");
                     break;
-                    //wrong message, ignore
+                    // wrong message, ignore
                 }
             }
-            else if(strcasestr((char*)payload, CLOSEGATE))
+            else if (strcasestr((char *)payload, CLOSEGATE))
             {
                 current_symbol += strlen(CLOSEGATE);
-                if(payload[current_symbol] == '-')
+                if (payload[current_symbol] == '-')
                 {
                     current_symbol++;
                     destination_id += payload[current_symbol++];
                     destination_id += payload[current_symbol++];
                     destination_id += payload[current_symbol++];
-                    if(destination_id == MY_ID)
+                    if (destination_id == MY_ID)
                     {
                         Serial.println("DEMO_closinggate");
                         CloseGate();
@@ -185,47 +183,47 @@ void ReceiveAndParseData(byte *payload, unsigned int length)
                     {
                         Serial.println("DEMO_close gate not for me");
                         break;
-                        //ignore, not for me
+                        // ignore, not for me
                     }
                 }
                 else
                 {
                     Serial.println("DEMO_close gate not finished");
                     break;
-                    //wrong message, ignore
+                    // wrong message, ignore
                 }
             }
-            else if(strcasestr((char*)payload, NUMOFPEOPLE))
+            else if (strcasestr((char *)payload, NUMOFPEOPLE))
             {
                 // code to refresh amount of data for other gates
                 current_symbol += strlen(NUMOFPEOPLE);
                 break;
             }
-            else if(strcasestr((char*)payload, EMERGENCY))
+            else if (strcasestr((char *)payload, EMERGENCY))
             {
                 // code to close gate
                 current_symbol += strlen(EMERGENCY);
                 break;
             }
-            else if(strcasestr((char*)payload, ALLOC))
+            else if (strcasestr((char *)payload, ALLOC))
             {
                 current_symbol += strlen(ALLOC);
-                if(payload[current_symbol] == '-')
+                if (payload[current_symbol] == '-')
                 {
                     current_symbol++;
                     destination_id += payload[current_symbol++];
                     destination_id += payload[current_symbol++];
                     destination_id += payload[current_symbol++];
-                    if(destination_id == MY_ID)
+                    if (destination_id == MY_ID)
                     {
                         Serial.println("DEMO_allocation is for me");
-                        std::string current_command((char*)payload);
+                        std::string current_command((char *)payload);
                         int end_index = current_command.find(';', current_symbol);
-                        if(end_index == std::string::npos)
+                        if (end_index == std::string::npos)
                         {
                             Serial.println("DEMO_allocation no end symbol");
                             break;
-                            //Fatal error: no end symbol!
+                            // Fatal error: no end symbol!
                         }
                         else
                         {
@@ -236,37 +234,36 @@ void ReceiveAndParseData(byte *payload, unsigned int length)
                                 Serial.println("DEMO_allocated successfully");
                                 break;
                             }
-                            catch(const std::out_of_range& e)
+                            catch (const std::out_of_range &e)
                             {
                                 Serial.println("DEMO_alloc failed");
                                 break;
-                                //Fatal error: could not substring!
+                                // Fatal error: could not substring!
                             }
-                            catch (const std::invalid_argument& e) 
+                            catch (const std::invalid_argument &e)
                             {
                                 Serial.println("DEMO_alloc failed");
                                 break;
-                                //Fatal error: The string does not contain a valid integer
-                                //Fatal error: The integer is out of range
+                                // Fatal error: The string does not contain a valid integer
+                                // Fatal error: The integer is out of range
                             }
                         }
-
                     }
                     else
                     {
                         Serial.println("DEMO_alloc not for me");
                         break;
-                        //ignore, not for me
+                        // ignore, not for me
                     }
                 }
                 else
                 {
                     Serial.println("DEMO_alloc not formatted with dash for ID");
                     break;
-                    //wrong message, ignore
+                    // wrong message, ignore
                 }
             }
-            else if(strcasestr((char*)payload, REGISTER))
+            else if (strcasestr((char *)payload, REGISTER))
             {
                 // not for me
                 current_symbol += strlen(EMERGENCY);
@@ -286,27 +283,28 @@ void ReceiveAndParseData(byte *payload, unsigned int length)
 void connectToWiFi()
 // Function to begin the WiFi connection of the MQTT.
 {
-  Serial.print("Connecting to ");
+    Serial.print("Connecting to ");
 
-  WiFi.begin(ssid, password);
-  Serial.println(ssid);
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    Serial.print(".");
-    delay(500);
-  }
-  Serial.print("Connected.");
+    WiFi.begin(ssid, password);
+    Serial.println(ssid);
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        Serial.print(".");
+        delay(500);
+    }
+    Serial.print("Connected.");
 }
 
-void callback(char *topic, byte *payload, unsigned int length) 
+void callback(char *topic, byte *payload, unsigned int length)
 // Function is automatically called from the MQTT library when
 // a new message appears on the topic.
 {
     Serial.print("/");
     Serial.print(topic);
     Serial.println(":");
-    for (int i = 0; i < length; i++) {
-        Serial.print((char) payload[i]);
+    for (int i = 0; i < length; i++)
+    {
+        Serial.print((char)payload[i]);
     }
     ReceiveAndParseData(payload, length);
     Serial.println();
@@ -315,17 +313,19 @@ void callback(char *topic, byte *payload, unsigned int length)
 
 void setupMQTT()
 {
-  mqttClient.setServer(mqtt_broker, mqtt_port);
-  // set the callback function
-  mqttClient.setCallback(callback);
+    mqttClient.setServer(mqtt_broker, mqtt_port);
+    // set the callback function
+    mqttClient.setCallback(callback);
 }
 
-void setup() {
+void setup()
+{
 
     Serial.begin(9600);
     WiFi.begin(ssid, password);
     Serial.println("Connecting to WiFi.");
-    while (WiFi.status() != WL_CONNECTED) {
+    while (WiFi.status() != WL_CONNECTED)
+    {
         delay(500);
         Serial.print(".");
     }
@@ -334,13 +334,17 @@ void setup() {
 
     mqttClient.setServer(mqtt_broker, mqtt_port);
     mqttClient.setCallback(callback);
-    while (!mqttClient.connected()) {
+    while (!mqttClient.connected())
+    {
         String client_id = "esp32Comms";
         client_id += String(WiFi.macAddress());
         Serial.printf("%s is connecting...\n", client_id.c_str());
-        if (mqttClient.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
+        if (mqttClient.connect(client_id.c_str(), mqtt_username, mqtt_password))
+        {
             Serial.println("Connected to the broker!");
-        } else {
+        }
+        else
+        {
             Serial.print("Error: ");
             Serial.print(mqttClient.state());
             delay(2000);
@@ -356,27 +360,27 @@ void setup() {
     mqttClient.publish("airportDemo", data);
 }
 
-
-
-void loop() {
+void loop()
+{
     mqttClient.loop();
-    while(Serial.available() > 0)
+    while (Serial.available() > 0)
     {
         bool something_changed = false;
         char serial_command = 'L';
         serial_command = Serial.read();
-        if(serial_command == 'A')
+        if (serial_command == 'A')
         {
             people_in_queue++;
             Serial.println("added person");
             something_changed = true;
         }
-        if(serial_command == 'R')
+        if (serial_command == 'R')
         {
             people_in_queue--;
             Serial.println("removed person");
+            something_changed = true;
         }
-        if(gate_status == STATUS_OPENED && something_changed)
+        if (gate_status == STATUS_OPENED && something_changed)
         {
             // Please implement function according to heartbeat!
             char data[100];
@@ -385,5 +389,4 @@ void loop() {
             something_changed = false;
         }
     }
-
 }
