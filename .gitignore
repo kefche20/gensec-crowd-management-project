@@ -1,3 +1,7 @@
+### Project Configs ###
+/dividerNode/include/config.h
+/gateNode/include/config.h
+
 ### macOS ###
 # General
 .DS_Store
