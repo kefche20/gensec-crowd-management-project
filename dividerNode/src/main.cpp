@@ -1,126 +1,10 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
-#include <string>
+#include "config.hpp" // Contains WiFi passwords and other configs
 
-// // Classes
-// class Gate 
-// {
-// private:
-//     std::string id;
-//     bool isOpen;
-//     int peopleCount;
-
-// public:
-//     Gate(const std::string& id) : isOpen(false), peopleCount(0) {}
-
-//     const std::string& getId() const {
-//         return id;
-//     }
-
-//     void open() {
-//         isOpen = true;
-//     }
-
-//     void close() {
-//         isOpen = false;
-//     }
-
-//     bool isOpened() const {
-//         return isOpen;
-//     }
-
-//     void addPerson() {
-//         if (isOpen) {
-//             ++peopleCount;
-//         }
-//         // Handle the case when the gate is closed, if needed
-//     }
-
-//     void removePerson() {
-//         if (peopleCount > 0) {
-//             --peopleCount;
-//         }
-//         // Handle underflow or closed gate, if needed
-//     }
-
-//     int getLineCount() const {
-//         return peopleCount;
-//     }
-
-//     // Other functionalities as needed
-// };
-// class GateManager 
-// {
-// private:
-//     std::map<std::string, Gate> gates; // Gates identified by their IDs
-//     int openThreshold;  // Threshold to open a new gate
-//     int closeThreshold; // Threshold to close an idle gate
-
-// public:
-//     GateManager() : openThreshold(5), closeThreshold(0) {}
-//     void addGate(const std::string& id) {
-//         gates[id] = Gate(id);
-//     }
-
-//     void openGate(const std::string& id) {
-//         gates[id].open();
-//     }
-
-//     void closeGate(const std::string& id) {
-//         gates[id].close();
-//     }
-
-//     void addPersonToGate(const std::string& id) {
-//         gates[id].addPerson();
-//     }
-
-//     void openAnIdleGate() {
-//       for (auto& gate : gates) {
-//           if (gate.second.isOpened() == false) {
-//               gate.second.open();
-//               break; // Open only one gate at a time
-//           }
-//       }
-//     }
-
-//     void closeAnIdleGate() {
-//       for (auto& gate : gates) {
-//           if (gate.second.isOpened() && gate.second.getLineCount() == 0) {
-//               gate.second.close();
-//               break; // Close only one gate at a time
-//           }
-//       }
-//     }
-//     std::string findLeastBusyGate() {
-//         int minCount = std::numeric_limits<int>::max();
-//         std::string minGateId = "";
-
-//         for (const auto& gate : gates) {
-//             if (gate.second.isOpened() && gate.second.getLineCount() < minCount) {
-//                 minCount = gate.second.getLineCount();
-//                 minGateId = gate.first;
-//             }
-//         }
-
-//         return minGateId;
-//     }
-
-//     void allocatePersonToLeastBusyGate() {
-//         std::string gateId = findLeastBusyGate();
-//         if (gateId != "") {
-//             addPersonToGate(gateId);
-//         }
-//         // Handle the case when no gate is available or all are busy
-//     }
-
-//     int getLineCount(int gateId) {
-//         //return gates[gateId].getLineCount();
-//     }
-
-//     // Additional functionalities as needed
-// };
-
+// Classes
+#include "gatemanager.hpp"
 
 // Local defines
 #define STATUS_CLOSED 0
@@ -142,6 +26,12 @@ const char *SCANNED = "SCANNED";
 WiFiClient espClient;
 
 // MQTT Broker variables
+const char *mqtt_broker = "broker.hivemq.com";
+const char *topic_gates = "airportDemo";
+const char *topic_dividers = "airportDemoDividers";
+const char *mqtt_username = "Nedyalko";
+const char *mqtt_password = "1234";
+const int mqtt_port = 1883;
 PubSubClient mqttClient(espClient);
 
 // REVIEW: Should the divider be in heap?
@@ -157,16 +47,17 @@ void setupMQTT();
 
 void SendMessage()
 {
-
 }
-void ReceiveAndParseData(byte *payload, unsigned int length)
+void ReceiveAndParseData(byte *payload, unsigned int length, short topic)
 // This function is called when data is received from the MQTT callback.
 // Goal is to act accordingly of the command/data received.
 {
-    unsigned int current_symbol = 0;
-    std::string received_id = "";
-    std::string destination_id = "";
-    while(current_symbol<length)
+  unsigned int current_symbol = 0;
+  std::string received_id = "";
+  std::string destination_id = "";
+  while (current_symbol < length)
+  {
+    if (current_symbol == 0)
     {
       if (payload[current_symbol] == '&')
       {
@@ -275,6 +166,9 @@ void ReceiveAndParseData(byte *payload, unsigned int length)
       // NOTE: Please update all types of possible communication in the Protocol Specification document.
       // This would help us define all cases and have comms covered.
       if(strcasestr((char *)payload, SCANNED))
+      {
+
+      }
     }
     else
     {
@@ -284,8 +178,6 @@ void ReceiveAndParseData(byte *payload, unsigned int length)
     }
   }
 }
-
-
 
 void connectToWiFi()
 // Function to begin the WiFi connection of the MQTT.
@@ -301,8 +193,6 @@ void connectToWiFi()
   }
   Serial.print("Connected.");
 }
-
-
 
 void callback(char *topic, byte *payload, unsigned int length)
 // Function is automatically called from the MQTT library when
@@ -337,7 +227,6 @@ void callback(char *topic, byte *payload, unsigned int length)
   }
 }
 
-
 void setupMQTT()
 {
   mqttClient.setServer(mqtt_broker, mqtt_port);
@@ -348,31 +237,39 @@ void setupMQTT()
 void setup()
 {
 
-    Serial.begin(9600);
-    WiFi.begin(ssid, password);
-    Serial.println("Connecting to WiFi.");
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-    }
-    Serial.println();
-    Serial.println("Connected!");
+  Serial.begin(9600);
+  WiFi.begin(ssid, password);
+  Serial.println("Connecting to Wi-Fi...");
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(1000);
+    Serial.print(".");
+  }
+  Serial.println();
+  Serial.println("Connected!");
 
-    mqttClient.setServer(mqtt_broker, mqtt_port);
-    mqttClient.setCallback(callback);
-    while (!mqttClient.connected()) {
-        String client_id = "esp32Gates";
-        client_id += String(WiFi.macAddress());
-        Serial.printf("%s is connecting...\n", client_id.c_str());
-        if (mqttClient.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
-            Serial.println("Connected to the broker!");
-        } else {
-            Serial.print("Error: ");
-            Serial.print(mqttClient.state());
-            delay(2000);
-        }
+  mqttClient.setServer(mqtt_broker, mqtt_port);
+  mqttClient.setCallback(callback);
+  while (!mqttClient.connected())
+  {
+    String client_id = "esp32Gates";
+    client_id += String(WiFi.macAddress());
+    Serial.printf("%s is connecting...\n", client_id.c_str());
+    if (mqttClient.connect(client_id.c_str(), mqtt_username, mqtt_password))
+    {
+      Serial.println("Connected to the broker!");
     }
-    mqttClient.subscribe(topic);
+    else
+    {
+      Serial.print("Error: ");
+      Serial.print(mqttClient.state());
+      delay(2000);
+      Serial.println("Restarting ESP:");
+      ESP.restart();
+    }
+  }
+  mqttClient.subscribe(topic_gates);
+  mqttClient.subscribe(topic_dividers);
 }
 
 void loop()

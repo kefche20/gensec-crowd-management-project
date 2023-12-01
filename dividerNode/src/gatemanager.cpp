@@ -1,4 +1,4 @@
-#include "gatemanager.h"
+#include "gatemanager.hpp"
 
 GateManager::GateManager() : openThreshold(5), closeThreshold(0)
 {

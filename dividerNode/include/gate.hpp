@@ -1,5 +1,5 @@
-#ifndef GATE_H
-#define GATE_H
+#ifndef GATE_HPP
+#define GATE_HPP
 
 #include <string>
 

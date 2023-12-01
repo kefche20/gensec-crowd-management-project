@@ -1,4 +1,4 @@
-#include "gate.h"
+#include "gate.hpp"
 Gate::Gate(std::string id) : id(std::move(id)), isOpen(false), peopleCount(0)
 {
 }

@@ -1,10 +1,10 @@
-#ifndef GATEMANAGER_H
-#define GATEMANAGER_H
+#ifndef GATEMANAGER_HPP
+#define GATEMANAGER_HPP
 
 #include <map>
 #include <string>
-#include "gate.h"
-#include "config.h"
+#include "gate.hpp"
+#include "config.hpp"
 class GateManager
 {
 private:
