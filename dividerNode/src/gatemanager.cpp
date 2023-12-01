@@ -1,105 +1,134 @@
-#include <map>
-#include <string.h>
-#include "gate.h"
+#include "gatemanager.h"
 
-static const int MAX_GATES = 3;
-
-class GateManager
+GateManager::GateManager() : openThreshold(5), closeThreshold(0)
 {
-private:
-    std::map<std::string, Gate> gates; // Gates identified by their IDs
-    int openThreshold;                 // Threshold to open a new gate
-    int closeThreshold;                // Threshold to close an idle gate
+}
 
-
-public:
-    GateManager() : openThreshold(5), closeThreshold(0) {}
-    void addGate(std::string id)
+void GateManager::addGate(std::string id)
+{
+    if (gates.size() == MAX_GATES)
     {
-        if (gates.find(id) != gates.end())
-        {
-            // TODO:: Throw error when gate is already registered
-            return;
-        }
-        if(gates.size() == MAX_GATES)
-        {
-            // TODO:: Throw error when already a lot of gates are registered
-            return;
-        }
-        gates[id] = Gate(id);
+        // TODO:: Throw error when too many gates are registered
+        return;
     }
-
-    void openGate(std::string id)
+    auto result = gates.emplace(std::make_pair(id, Gate(id)));
+    if (!result.second)
     {
-        gates[id].open();
+        // TODO:: Throw error when gate is already registered
+        return;
     }
+}
 
-    void closeGate(std::string id)
+void GateManager::openGate(std::string id)
+{
+    auto it = gates.find(id);
+    if (it != gates.end())
     {
-        gates[id].close();
+        it->second.open();
     }
-
-    void addPersonToGate(std::string id)
+    else
     {
-        // TODO: check threshold for opening 
-        gates[id].addPerson();
+        // Handle the case where the gate does not exist
     }
+}
 
-    void openAnIdleGate()
+void GateManager::closeGate(std::string id)
+{
+    auto it = gates.find(id);
+    if (it != gates.end())
     {
-        for (auto &gate : gates)
-        {
-            if (gate.second.isOpened() == false)
-            {
-                gate.second.open();
-                break; // Open only one gate at a time
-            }
-        }
+        it->second.close();
     }
-
-    void closeAnIdleGate()
+    else
     {
-        for (auto &gate : gates)
-        {
-            if (gate.second.isOpened() && gate.second.getLineCount() == closeThreshold)
-            {
-                gate.second.close();
-                break; // Close only one gate at a time
-            }
-        }
+        // Handle the case where the gate does not exist
     }
+}
 
-    std::string findLeastBusyGate()
+void GateManager::addPersonToGate(std::string id)
+{
+    auto it = gates.find(id);
+    if (it != gates.end())
     {
-        int minCount = -1;
-        std::string minGateId = "";
-
-        for (const auto &gate : gates)
-        {
-            if (gate.second.isOpened() && gate.second.getLineCount() < minCount)
-            {
-                minCount = gate.second.getLineCount();
-                minGateId = gate.first;
-            }
-        }
-
-        return minGateId;
+        it->second.addPerson();
     }
-
-    void allocatePersonToLeastBusyGate()
+    else
     {
-        std::string gateId = findLeastBusyGate();
-        if (gateId != "")
-        {
-            addPersonToGate(gateId);
-        }
-        // Handle the case when no gate is available or all are busy
+        // Handle the case where the gate does not exist
     }
+}
 
-    int getLineCount(std::string id)
+void GateManager::openAnIdleGate()
+{
+    // for (auto &gate : gates)
+    // {
+    //     if (gate.second.isOpened() == false)
+    //     {
+    //         gate.second.open();
+    //         break; // Open only one gate at a time
+    //     }
+    // }
+}
+
+void GateManager::refreshNumOfPeopleInGate(std::string id, int numOfPeople)
+{
+    // if (gates.find(id) != gates.end())
+    // {
+    //     gates[id].refreshCount(numOfPeople);
+    // }
+    // else
+    // {
+    //     // Handle case of non-existing gate
+    // }
+}
+
+void GateManager::closeAnIdleGate()
+{
+    // for (auto &gate : gates)
+    // {
+    //     if (gate.second.isOpened() && gate.second.getLineCount() == closeThreshold)
+    //     {
+    //         gate.second.close();
+    //         break; // Close only one gate at a time
+    //     }
+    // }
+}
+
+std::string GateManager::findLeastBusyGate()
+{
+    int minCount = 100;
+    std::string minGateId = "";
+
+    // for (auto &gate : gates)
+    // {
+    //     if (gate.second.isOpened() && gate.second.getLineCount() < minCount)
+    //     {
+    //         minCount = gate.second.getLineCount();
+    //         minGateId = gate.first;
+    //     }
+    // }
+
+    return minGateId;
+}
+
+void GateManager::allocatePersonToLeastBusyGate()
+{
+    std::string gateId = findLeastBusyGate();
+    if (gateId != "")
     {
-        return gates[id].getLineCount();
+        addPersonToGate(gateId);
     }
+    // Handle the case when no gate is available or all are busy
+}
 
-    // Additional functionalities as needed
-};
+int GateManager::getLineCount(std::string id)
+{
+    auto it = gates.find(id);
+    if (it != gates.end())
+    {
+        return it->second.getLineCount();
+    }
+    else
+    {
+    }
+}

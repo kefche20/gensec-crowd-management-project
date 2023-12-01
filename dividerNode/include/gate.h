@@ -3,7 +3,8 @@
 
 #include <string>
 
-class Gate {
+class Gate
+{
 private:
     std::string id;
     bool isOpen;
@@ -11,10 +12,10 @@ private:
 
 public:
     // Constructor
-    Gate(const std::string &id);
+    Gate(std::string id);
 
     // Get the ID of the gate
-    const std::string &getId() const;
+    std::string getId();
 
     // Open the gate
     void open();
@@ -23,16 +24,16 @@ public:
     void close();
 
     // Check if the gate is open
-    bool isOpened() const;
+    bool isOpened();
 
     // Add a person to the gate
     void addPerson();
 
-    // Remove a person from the gate
-    void removePerson();
+    // Update the number of people in line
+    void refreshCount(int count);
 
     // Get the number of people in line at the gate
-    int getLineCount() const;
+    int getLineCount();
 
     // Other functionalities as needed
 };

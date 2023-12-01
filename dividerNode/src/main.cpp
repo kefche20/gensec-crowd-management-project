@@ -1,8 +1,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
-#include <map>
 #include <PubSubClient.h>
-#include <string>
+#include "config.h" // Contains WiFi passwords and other configs
 
 // Classes
 #include "gatemanager.h"
@@ -22,8 +21,6 @@ const char *ALLOC = "ALLOC";
 const char *REGISTER = "REGISTER";
 
 // WiFi variables
-const char *ssid = "SISA";            // Enter your WiFi name
-const char *password = "samsung2243"; // Enter WiFi password
 WiFiClient espClient;
 
 // MQTT Broker variables
@@ -39,6 +36,8 @@ PubSubClient mqttClient(espClient);
 const std::string MY_ID = "901";
 constexpr int MY_MAX_PEOPLE = 30;
 
+GateManager *divider = new GateManager(); // Stores all gates for this divider.
+// Should the divider be in heap?
 
 // Function definitions
 void ReceiveAndParseData(byte *payload, unsigned int length);
@@ -118,63 +117,33 @@ void ReceiveAndParseData(byte *payload, unsigned int length, short topic)
       {
         current_symbol += strlen(NUMOFPEOPLE);
         std::string current_command((char *)payload);
-        int end_index = current_command.find(';', current_symbol);
-        if (end_index == std::string::npos)
+        size_t plus_index = current_command.find('+');
+        int end_index = current_command.find(';', plus_index);
+        if (plus_index == std::string::npos || end_index == std::string::npos)
         {
           Serial.println("DEMO_allocation no end symbol");
           break;
           // Fatal error: no end symbol!
         }
-        else
+        try
         {
-          try
-          {
-            // Solution for demo. Please replace with class
-            // usage as soon as possible, and implement
-            // the already done functions.
-            std::string number_string = current_command.substr(current_symbol, end_index - current_symbol);
-            int number_int = std::stoi(number_string);
-            if (received_id == ID_GATE1)
-            {
-              Q_GATE1 = number_int;
-              char data[100];
-              sprintf(data, "ID %s, amount updated to %d", ID_GATE1.c_str(), number_int);
-              Serial.println(data);
-            }
-            else if (received_id == ID_GATE2)
-            {
-              Q_GATE2 = number_int;
-              char data[100];
-              sprintf(data, "ID %s, amount updated to %d", ID_GATE2.c_str(), number_int);
-              Serial.println(data);
-            }
-            else if (received_id == ID_GATE3)
-            {
-              Q_GATE3 = number_int;
-              char data[100];
-              sprintf(data, "ID %s, amount updated to %d", ID_GATE3.c_str(), number_int);
-              Serial.println(data);
-            }
-            else
-            {
-              // Fatal error: gate not registered!
-            }
-            Serial.println("DEMO_Data updated successfully");
-            break;
-          }
-          catch (const std::out_of_range &e)
-          {
-            Serial.println("DEMO_data update failed");
-            break;
-            // Fatal error: could not substring!
-            // Fatal error: The integer is out of range
-          }
-          catch (const std::invalid_argument &e)
-          {
-            Serial.println("DEMO_data update failed");
-            break;
-            // Fatal error: The string does not contain a valid integer
-          }
+          int numOfPeople = std::stoi(current_command.substr(plus_index + 1, end_index - plus_index - 1));
+          divider->refreshNumOfPeopleInGate(received_id, numOfPeople);
+          Serial.println("DEMO_Data updated successfully");
+          break;
+        }
+        catch (const std::out_of_range &e)
+        {
+          Serial.println("DEMO_data update failed");
+          break;
+          // Fatal error: could not substring!
+          // Fatal error: The integer is out of range
+        }
+        catch (const std::invalid_argument &e)
+        {
+          Serial.println("DEMO_data update failed");
+          break;
+          // Fatal error: The string does not contain a valid integer
         }
         break;
       }
@@ -186,38 +155,8 @@ void ReceiveAndParseData(byte *payload, unsigned int length, short topic)
       }
       else if (strcasestr((char *)payload, REGISTER))
       {
-        // Solution for demo. Please replace with class
-        // usage as soon as possible, and implement
-        // the already done functions.
-        if (received_id == ID_GATE1 || received_id == ID_GATE2 || received_id == ID_GATE3)
-        {
-          Serial.println("DEMO_gate already registered");
-          break;
-        }
-        if (ID_GATE1 == "")
-        {
-          ID_GATE1 = received_id;
-          Serial.println("registered gate 1");
-          char data[100];
-          sprintf(data, "&%s-OPENGATE-%s;", MY_ID.c_str(), ID_GATE1.c_str());
-          mqttClient.publish("airportDemo", data);
-        }
-        else if (ID_GATE2 == "")
-        {
-          ID_GATE2 = received_id;
-          Serial.println("registered gate 2");
-          char data[100];
-          sprintf(data, "&%s-OPENGATE-%s;", MY_ID.c_str(), ID_GATE2.c_str());
-          mqttClient.publish("airportDemo", data);
-        }
-        else if (ID_GATE3 == "")
-        {
-          ID_GATE3 = received_id;
-          Serial.println("registered gate 3");
-          char data[100];
-          sprintf(data, "&%s-OPENGATE-%s;", MY_ID.c_str(), ID_GATE3.c_str());
-          mqttClient.publish("airportDemo", data);
-        }
+        divider->addGate(received_id);
+        // TODO:: Handle cases that may be returned.
         Serial.println("Connected the gate!");
         break;
       }

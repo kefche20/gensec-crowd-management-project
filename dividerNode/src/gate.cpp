@@ -1,57 +1,43 @@
-#include <string>
-class Gate
+#include "gate.h"
+Gate::Gate(std::string id) : id(std::move(id)), isOpen(false), peopleCount(0)
 {
-private:
-  std::string id;
-  bool isOpen;
-  int peopleCount;
+}
+std::string Gate::getId()
+{
+  return id;
+}
 
-public:
-  Gate(const std::string &id) : isOpen(false), peopleCount(0) {}
+void Gate::open()
+{
+  isOpen = true;
+}
 
-  const std::string &getId() const
+void Gate::close()
+{
+  isOpen = false;
+}
+
+bool Gate::isOpened()
+{
+  return isOpen;
+}
+
+void Gate::addPerson()
+{
+  if (isOpen)
   {
-    return id;
+    ++peopleCount;
   }
+  // TODO:: Handle case when gate is closed
+  // TODO:: Handle case when gate is at maximum
+}
 
-  void open()
-  {
-    isOpen = true;
-  }
+void Gate::refreshCount(int count)
+{
+  peopleCount = count;
+}
 
-  void close()
-  {
-    isOpen = false;
-  }
-
-  bool isOpened() 
-  {
-    return isOpen;
-  }
-
-  void addPerson()
-  {
-    if (isOpen)
-    {
-      ++peopleCount;
-    }
-    // TODO:: Handle case when gate is closed
-    // TODO:: Handle case when gate is at maximum
-
-  }
-
-  void removePerson()
-  {
-    if (peopleCount > 0)
-    {
-      --peopleCount;
-    }
-    // Handle underflow or closed gate, if needed
-  }
-
-  int getLineCount()
-  {
-    return peopleCount;
-  }
-
-};
+int Gate::getLineCount()
+{
+  return peopleCount;
+}

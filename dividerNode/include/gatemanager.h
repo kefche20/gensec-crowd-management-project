@@ -3,29 +3,33 @@
 
 #include <map>
 #include <string>
-#include "Gate.h"
-
-class GateManager {
+#include "gate.h"
+#include "config.h"
+class GateManager
+{
 private:
     std::map<std::string, Gate> gates; // Gates identified by their IDs
-    int openThreshold;  // Threshold to open a new gate
-    int closeThreshold; // Threshold to close an idle gate
+    int openThreshold;                 // Threshold to open a new gate
+    int closeThreshold;                // Threshold to close an idle gate
 
 public:
     // Constructor
     GateManager();
 
     // Add a new gate with the given ID
-    void addGate(const std::string& id);
+    void addGate(std::string id);
 
     // Open the gate with the given ID
-    void openGate(const std::string& id);
+    void openGate(std::string id);
 
     // Close the gate with the given ID
-    void closeGate(const std::string& id);
+    void closeGate(std::string id);
 
     // Add a person to the gate with the given ID
-    void addPersonToGate(const std::string& id);
+    void addPersonToGate(std::string id);
+
+    // Update number of people in a gate with given ID
+    void refreshNumOfPeopleInGate(std::string id, int numOfPeople);
 
     // Open an idle gate
     void openAnIdleGate();
@@ -40,7 +44,7 @@ public:
     void allocatePersonToLeastBusyGate();
 
     // Get the number of people in line at a specific gate
-    int getLineCount(const std::string& gateId);
+    int getLineCount(std::string gateId);
 
     // Additional functionalities as needed
 };
