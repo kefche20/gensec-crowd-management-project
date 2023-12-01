@@ -129,31 +129,24 @@
 #define TOPIC_DIVIDERS 1
 
 // Global commands
+// TODO: Transition to std::string completely
 const char *OPENGATE = "OPENGATE";
 const char *CLOSEGATE = "CLOSEGATE";
 const char *NUMOFPEOPLE = "NUMOFPEOPLE";
 const char *EMERGENCY = "EMERGENCY";
 const char *ALLOC = "ALLOC";
 const char *REGISTER = "REGISTER";
+const char *SCANNED = "SCANNED";
 
 // WiFi variables
 WiFiClient espClient;
 
 // MQTT Broker variables
-const char *mqtt_broker = "broker.hivemq.com";
-const char *topic_gates = "airportDemo";
-const char *topic_dividers = "airportDemoDividers";
-const char *mqtt_username = "Nedyalko";
-const char *mqtt_password = "1234";
-const int mqtt_port = 1883;
 PubSubClient mqttClient(espClient);
 
-// Divider global variables
-const std::string MY_ID = "901";
-constexpr int MY_MAX_PEOPLE = 30;
-
+// REVIEW: Should the divider be in heap?
 GateManager *divider = new GateManager(); // Stores all gates for this divider.
-// Should the divider be in heap?
+// NOTE: Solution for keeping track of the other dividers should be created.
 
 // Function definitions
 void ReceiveAndParseData(byte *payload, unsigned int length);
@@ -271,13 +264,17 @@ void ReceiveAndParseData(byte *payload, unsigned int length)
       else if (strcasestr((char *)payload, REGISTER))
       {
         divider->addGate(received_id);
-        // TODO:: Handle cases that may be returned.
+        // TODO: Handle cases that may be returned.
         Serial.println("Connected the gate!");
         break;
       }
     }
     else if (topic == TOPIC_DIVIDERS && current_symbol == 5)
     {
+      // TODO: Handle all cases of divider communication in the channel.
+      // NOTE: Please update all types of possible communication in the Protocol Specification document.
+      // This would help us define all cases and have comms covered.
+      if(strcasestr((char *)payload, SCANNED))
     }
     else
     {

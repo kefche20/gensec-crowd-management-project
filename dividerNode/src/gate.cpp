@@ -28,8 +28,8 @@ void Gate::addPerson()
   {
     ++peopleCount;
   }
-  // TODO:: Handle case when gate is closed
-  // TODO:: Handle case when gate is at maximum
+  // TODO: Handle case when gate is closed
+  // TODO: Handle case when gate is at maximum
 }
 
 void Gate::refreshCount(int count)

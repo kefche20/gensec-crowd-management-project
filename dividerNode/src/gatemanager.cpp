@@ -8,13 +8,13 @@ void GateManager::addGate(std::string id)
 {
     if (gates.size() == MAX_GATES)
     {
-        // TODO:: Throw error when too many gates are registered
+        // TODO: Throw error when too many gates are registered
         return;
     }
     auto result = gates.emplace(std::make_pair(id, Gate(id)));
     if (!result.second)
     {
-        // TODO:: Throw error when gate is already registered
+        // TODO: Throw error when gate is already registered
         return;
     }
 }
@@ -28,7 +28,7 @@ void GateManager::openGate(std::string id)
     }
     else
     {
-        // Handle the case where the gate does not exist
+        // TODO: Handle the case where the gate does not exist
     }
 }
 
@@ -41,7 +41,7 @@ void GateManager::closeGate(std::string id)
     }
     else
     {
-        // Handle the case where the gate does not exist
+        // TODO: Handle the case where the gate does not exist
     }
 }
 
@@ -54,12 +54,13 @@ void GateManager::addPersonToGate(std::string id)
     }
     else
     {
-        // Handle the case where the gate does not exist
+        // TODO: Handle the case where the gate does not exist
     }
 }
 
 void GateManager::openAnIdleGate()
 {
+    // TODO: Rethink the opening gates solution, as this may be done in the allocatePersonToLeastBusyGate function 
     // for (auto &gate : gates)
     // {
     //     if (gate.second.isOpened() == false)
@@ -72,6 +73,7 @@ void GateManager::openAnIdleGate()
 
 void GateManager::refreshNumOfPeopleInGate(std::string id, int numOfPeople)
 {
+    // TODO: Test the solution
     // if (gates.find(id) != gates.end())
     // {
     //     gates[id].refreshCount(numOfPeople);
@@ -84,6 +86,7 @@ void GateManager::refreshNumOfPeopleInGate(std::string id, int numOfPeople)
 
 void GateManager::closeAnIdleGate()
 {
+    // TODO: Rethink how and when should gates be closed as per sprint review.
     // for (auto &gate : gates)
     // {
     //     if (gate.second.isOpened() && gate.second.getLineCount() == closeThreshold)
@@ -96,6 +99,7 @@ void GateManager::closeAnIdleGate()
 
 std::string GateManager::findLeastBusyGate()
 {
+    // TODO: Test the solution
     int minCount = 100;
     std::string minGateId = "";
 
@@ -118,7 +122,7 @@ void GateManager::allocatePersonToLeastBusyGate()
     {
         addPersonToGate(gateId);
     }
-    // Handle the case when no gate is available or all are busy
+    // TODO: Handle the case when no gate is available or all are busy
 }
 
 int GateManager::getLineCount(std::string id)
@@ -130,5 +134,6 @@ int GateManager::getLineCount(std::string id)
     }
     else
     {
+        // TODO: Handle non-existing gate
     }
 }
