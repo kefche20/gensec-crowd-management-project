@@ -18,6 +18,13 @@ enum Role
     MEMBER
 };
 
+struct Timer
+{
+    unsigned long interval;
+    unsigned long pre_time;
+};
+
+
 class Device
 {
 private:
@@ -35,79 +42,12 @@ public:
     }
 };
 
-//------------------------  GATE ---------------------//
-class IGateListener
-{
-public:
-    virtual void gateRegister() = 0;
-    virtual void updateQueue() = 0;
-};
-
-class Gate : public Device
-{
-private:
-    int numOfQueue;
-    int isOpen;
-
-public:
-    Gate(int id) : Device(id)
-    {
-        this->numOfQueue = 0;
-        this->isOpen = 0;
-    }
-};
-
-class GateManager : public IGateListener
-{
-private:
-    std::list<Gate> gates;
-    ISender *sender;
-
-public:
-    GateManager()
-    {
-    }
-
-    bool GateRegister(int id)
-    {
-        if (id < 0)
-        {
-            return 0;
-        }
-
-        bool isExisted = false;
-
-        std::list<Gate>::iterator gate;
-        for (gate = gates.begin(); gate != gates.end() && !isExisted; ++gate)
-        {
-            if (gate->getId() == id)
-            {
-                isExisted = true;
-            }
-        }
-
-        // register new gate
-        if (!isExisted)
-        {
-            gates.push_back(Gate(id));
-        }
-
-        return !isExisted;
-    }
-};
-
-// -----------------------   DIVIDER ------------------------//
-struct Timer
-{
-    unsigned long interval;
-    unsigned long pre_time;
-};
-
+//TODO: integrate Divider class and Gate Manager class together 
 class FellowDivider : public Device
 {
 private:
     bool isLeader;
-    Gate *leastBusyGate;
+  //  Gate *leastBusyGate;
 
 public:
     FellowDivider(int id, bool isLeader);
@@ -115,6 +55,15 @@ public:
 
     bool IsLeader();
 };
+
+
+/*
+   Divider class keep track on the communication between dividers 
+      - In the divider network, there will be one leader and others are members. 
+      - The leader will recieve the information from the member and proccess the information.
+      - The Leader will be reasign if the old leader is dead.
+   //TODO: find a proper design solution to handle the role play actions - transition from member to leader. 
+*/
 
 class Divider : public IDividerListener
 {
@@ -131,16 +80,23 @@ private:
     hrtbt::Heartbeat *leaderAlive;
 
 public:
-    Divider(uint8_t id, ISender *sender, hrtbt::Heartbeat *leaderAlive);
+    Divider(uint8_t id, hrtbt::Heartbeat *leaderAlive);
+    
+    int GetId();
 
-    // ROLE PLAY
+    //upate the sender - interface of messager for sending msg function
+    int UpdateSender(ISender *sender);
+
+    //check if the first divider in the network
     int IsFellowExisted();
-
+    
+    //self check propose to be leader if have the lowest Id 
     int IsNextLeader();
-
+    
+    //behaviour of divider based on the current play role
     void DividersChat(unsigned long now);
 
-    // DIV LISTNER INTERFACE
+    //get the current play role 
     std::string GetRole() override
     {
         switch (role)
@@ -156,7 +112,8 @@ public:
             break;
         }
     }
-
+    
+    //set the new play role 
     void SetRole(std::string role) override
     {
         if (role == "MEMBER")
@@ -168,7 +125,8 @@ public:
             role = LEADER;
         }
     }
-
+    
+    //add or update new fellow dividers
     int UpdateFellow(int id, bool isLeader) override
     {
         bool isExisted = false;
@@ -191,11 +149,13 @@ public:
 
         return !isExisted;
     }
-
+    
+    //keepp track on leader alive - as member
     void LeaderBeating() override
     {
         leaderAlive->beating();
     }
 };
+
 
 #endif

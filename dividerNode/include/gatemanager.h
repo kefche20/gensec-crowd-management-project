@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 #include "gate.h"
-#include "config.h"
+#include "config.hpp"
 class GateManager
 {
 private:

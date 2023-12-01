@@ -1,7 +1,7 @@
 #ifndef HEARTBEAT_HPP
 #define HEARTBEAT_HPP
 
-#include "Arduino.h"
+#include <iostream>
 
 namespace hrtbt
 {

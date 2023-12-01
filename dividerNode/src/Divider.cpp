@@ -3,7 +3,7 @@
 FellowDivider::FellowDivider(int id, bool isLeader) : Device(id)
 {
     this->isLeader = isLeader;
-    this->leastBusyGate = nullptr;
+    // this->leastBusyGate = nullptr;
 }
 
 void FellowDivider::SetLeaderSta(bool sta)
@@ -16,12 +16,12 @@ bool FellowDivider::IsLeader()
     return this->isLeader;
 }
 
-Divider::Divider(uint8_t id, ISender *sender, hrtbt::Heartbeat *leaderAlive)
+Divider::Divider(uint8_t id, hrtbt::Heartbeat *leaderAlive)
 {
     this->id = id;
     this->dividers;
 
-    this->sender = sender;
+    this->sender = nullptr;
 
     this->role = IDLE;
     this->role = NEUTRAL;
@@ -30,6 +30,23 @@ Divider::Divider(uint8_t id, ISender *sender, hrtbt::Heartbeat *leaderAlive)
     timer.pre_time = 0;
 
     leaderAlive = leaderAlive;
+}
+
+int Divider::GetId()
+{
+    return this->id;
+}
+
+int Divider::UpdateSender(ISender *sender)
+{
+    if (sender == nullptr)
+    {
+        return 0;
+    }
+
+    this->sender = sender;
+
+    return 1;
 }
 
 int Divider::IsFellowExisted()
