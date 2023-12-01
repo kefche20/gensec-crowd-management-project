@@ -64,6 +64,7 @@ void OpenGate()
         // ^^ TEMP SOLUTION
     }
 }
+    
 void CloseGate()
 {
     if (people_in_queue != 0)
