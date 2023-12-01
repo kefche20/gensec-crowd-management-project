@@ -22,6 +22,15 @@ const char *ALLOC = "ALLOC";
 const char *REGISTER = "REGISTER";
 const char *SCANNED = "SCANNED";
 
+//NOTE: convertion to string brings some type problems for some function.
+// const std::string OPENGATE = "OPENGATE";
+// const std::string CLOSEGATE = "CLOSEGATE";
+// const std::string NUMOFPEOPLE = "NUMOFPEOPLE";
+// const std::string EMERGENCY = "EMERGENCY";
+// const std::string ALLOC = "ALLOC";
+// const std::string REGISTER = "REGISTER";
+// const std::string SCANNED = "SCANNED";
+
 // WiFi variables
 WiFiClient espClient;
 
@@ -31,6 +40,14 @@ const char *topic_gates = "airportDemo";
 const char *topic_dividers = "airportDemoDividers";
 const char *mqtt_username = "Nedyalko";
 const char *mqtt_password = "1234";
+
+//see above NOte [25]
+// const std::string mqtt_broker = "broker.hivemq.com";
+// const std::string topic_gates = "airportDemo";
+// const std::string topic_dividers = "airportDemoDividers";
+// const std::string mqtt_username = "Nedyalko";
+// const std::string mqtt_password = "1234";
+
 const int mqtt_port = 1883;
 PubSubClient mqttClient(espClient);
 
@@ -201,25 +218,25 @@ void callback(char *topic, byte *payload, unsigned int length)
 {
   if (strcmp(topic, topic_gates) == 0)
   {
-    Serial.print("Message from gate received:");
-    for (int i = 0; i < length; i++)
-    {
-      Serial.print((char)payload[i]);
-    }
+    // Serial.print("Message from gate received:");
+    // for (int i = 0; i < length; i++)
+    // {
+    //   Serial.print((char)payload[i]);
+    // }
     ReceiveAndParseData(payload, length, TOPIC_GATES);
-    Serial.println();
-    Serial.println();
+    // Serial.println();
+    // Serial.println();
   }
   else if (strcmp(topic, topic_dividers) == 0)
   {
-    Serial.print("Message from divider received:");
-    for (int i = 0; i < length; i++)
-    {
-      Serial.print((char)payload[i]);
-    }
+    // Serial.print("Message from divider received:");
+    // for (int i = 0; i < length; i++)
+    // {
+    //   Serial.print((char)payload[i]);
+    // }
     ReceiveAndParseData(payload, length, TOPIC_DIVIDERS);
-    Serial.println();
-    Serial.println();
+    // Serial.println();
+    // Serial.println();
   }
   else
   {
