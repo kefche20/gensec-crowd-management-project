@@ -1,6 +1,6 @@
 ### Project Configs ###
-/dividerNode/include/config.h
-/gateNode/include/config.h
+dividerNode/include/config.h
+gateNode/include/config.h
 
 ### macOS ###
 # General
@@ -109,3 +109,4 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,visualstudiocode,platformio,microsoftoffice,windows
+
