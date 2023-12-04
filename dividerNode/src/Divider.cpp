@@ -16,20 +16,19 @@ bool FellowDivider::IsLeader()
     return this->isLeader;
 }
 
-Divider::Divider(uint8_t id, hrtbt::Heartbeat *leaderAlive)
+Divider::Divider(int id, hrtbt::Heartbeat *leaderAlive)
 {
     this->id = id;
-    this->dividers;
 
     this->sender = nullptr;
 
     this->role = IDLE;
-    this->role = NEUTRAL;
+    this->preRole = NEUTRAL;
+
+    this->leaderAlive = leaderAlive;
 
     timer.interval = 5000;
     timer.pre_time = 0;
-
-    leaderAlive = leaderAlive;
 }
 
 int Divider::GetId()
@@ -49,9 +48,18 @@ int Divider::UpdateSender(ISender *sender)
     return 1;
 }
 
-int Divider::IsFellowExisted()
+int Divider::IsLeaderExisted()
 {
-    return dividers.size() != 0;
+    int IsExisted = 0;
+    std::list<FellowDivider>::iterator divider;
+    for (divider = dividers.begin(); divider != dividers.end() && !IsExisted; ++divider)
+    {
+        if (divider->IsLeader())
+        {
+            IsExisted = true;
+        }
+    }
+    return IsExisted;
 }
 
 int Divider::IsNextLeader()
@@ -71,28 +79,33 @@ int Divider::IsNextLeader()
     return isNextLeader;
 }
 
-void Divider::DividersChat(unsigned long now)
+//REVIEW - why member is reset in some case while the leader is not 
+void Divider::DividersChat(long now)
 {
     switch (role)
     {
     case IDLE:
+        // IDlE case is handled by notifying the existence of the new gate
         if (preRole != role)
         {
             sender->SendMessageAll(dividerTopic, std::to_string(this->id), "DIVIDER_DISCOVER");
             preRole = role;
         }
 
-        // automatically become leader if the first in the network
+        // automatically become leader if being the first one join the network
         if (now - timer.pre_time > timer.interval)
         {
-            if (!IsFellowExisted())
+            if (!IsLeaderExisted())
             {
-                role = LEADER;
+                role = NEUTRAL;
             }
+
+            timer.pre_time = now;
         }
 
         break;
     case NEUTRAL:
+        // NEUTRAL case is handled when the prime leade is dead
         if (preRole != role)
         {
 
@@ -101,38 +114,48 @@ void Divider::DividersChat(unsigned long now)
 
         if (now - timer.pre_time > timer.interval)
         {
+            // self propose based on id priority
             if (IsNextLeader())
             {
                 sender->SendMessageAll(dividerTopic, std::to_string(this->id), "NEW_LEADER");
                 role = LEADER;
             }
-
-        case MEMBER:
-            if (preRole != role)
-            {
-                sender->SendMessageAll(dividerTopic, std::to_string(this->id), "DIVIDER_MEMEBER");
-            }
-            // reply Leader requese - relate to gate managerment
-
-            // read heartbeat from leader
-            if (leaderAlive->trackingAlive() == hrtbt::status::DEAD)
-            {
-            }
-            break;
-        case LEADER:
-
-            // if(UI scan)
-
-            // ask for  dividers' information
-            // self check
-            // appoint to the next gate info
-
-            // send heartbeat for every 5 seconds
-            if (now - timer.pre_time > timer.interval)
-            {
-                sender->SendMessageAll(dividerTopic, std::to_string(this->id), "LEADER_ALIVE");
-            }
-            break;
         }
+        break;
+
+    case MEMBER:
+        if (preRole != role)
+        {
+            // notify to confirm
+            sender->SendMessageAll(dividerTopic, std::to_string(this->id), "DIVIDER_MEMEBER");
+            preRole = role;
+        }
+
+        // reply Leader request - relate to gate managerment
+
+        // read heartbeat from leader
+        if (leaderAlive->trackingAlive() == hrtbt::status::DEAD)
+        {
+
+            sender->SendMessageAll(dividerTopic, std::to_string(this->id), "LEADER_DEAD");
+            role = NEUTRAL;
+        }
+        break;
+    case LEADER:
+        if (preRole != role)
+        {
+            Serial.println("become leader!");
+            preRole = role;
+        }
+
+        // request leader to send data
+
+        // send heartbeat for every 5 seconds
+        if (now - timer.pre_time > timer.interval)
+        {
+            sender->SendMessageAll(dividerTopic, std::to_string(this->id), "LEADER_ALIVE");
+            timer.pre_time = now;
+        }
+        break;
     }
 }

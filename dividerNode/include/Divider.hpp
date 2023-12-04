@@ -8,8 +8,6 @@
 #include "Messager.hpp"
 #include "Heartbeat.hpp"
 
-#define dividerTopic "divider_chatbox"
-
 enum Role
 {
     IDLE,
@@ -20,10 +18,9 @@ enum Role
 
 struct Timer
 {
-    unsigned long interval;
-    unsigned long pre_time;
+    long interval;
+    long pre_time;
 };
-
 
 class Device
 {
@@ -42,12 +39,12 @@ public:
     }
 };
 
-//TODO: integrate Divider class and Gate Manager class together 
+// TODO: integrate Divider class and Gate Manager class together
 class FellowDivider : public Device
 {
 private:
     bool isLeader;
-  //  Gate *leastBusyGate;
+    //  Gate *leastBusyGate;
 
 public:
     FellowDivider(int id, bool isLeader);
@@ -56,13 +53,12 @@ public:
     bool IsLeader();
 };
 
-
 /*
-   Divider class keep track on the communication between dividers 
-      - In the divider network, there will be one leader and others are members. 
+   Divider class keep track on the communication between dividers
+      - In the divider network, there will be one leader and others are members.
       - The leader will recieve the information from the member and proccess the information.
       - The Leader will be reasign if the old leader is dead.
-   //TODO: find a proper design solution to handle the role play actions - transition from member to leader. 
+   //TODO: find a proper design solution to handle the role play actions - transition from member to leader.
 */
 
 class Divider : public IDividerListener
@@ -73,30 +69,24 @@ private:
     std::list<FellowDivider> dividers;
     ISender *sender;
 
-    // role play - member or divider
+    // role play
     Role role;
     Role preRole;
     Timer timer;
     hrtbt::Heartbeat *leaderAlive;
 
 public:
-    Divider(uint8_t id, hrtbt::Heartbeat *leaderAlive);
-    
+    Divider(int id, hrtbt::Heartbeat *leaderAlive);
+
     int GetId();
 
-    //upate the sender - interface of messager for sending msg function
+    // upate the sender - interface of messager for sending msg function
     int UpdateSender(ISender *sender);
 
-    //check if the first divider in the network
-    int IsFellowExisted();
-    
-    //self check propose to be leader if have the lowest Id 
-    int IsNextLeader();
-    
-    //behaviour of divider based on the current play role
-    void DividersChat(unsigned long now);
+    // behaviour of divider based on the current play role
+    void DividersChat(long now);
 
-    //get the current play role 
+    // get the current play role
     std::string GetRole() override
     {
         switch (role)
@@ -112,21 +102,25 @@ public:
             break;
         }
     }
-    
-    //set the new play role 
-    void SetRole(std::string role) override
+
+    // set the new play role
+    void SetRole(std::string newRole) override
     {
-        if (role == "MEMBER")
+        if (newRole == "MEMBER")
         {
             role = MEMBER;
         }
-        else if (role == "LEADER")
+        else if (newRole == "LEADER")
         {
             role = LEADER;
         }
+        else if (newRole == "NEUTRAL")
+        {
+            role = NEUTRAL;
+        }
     }
-    
-    //add or update new fellow dividers
+
+    // add or update new fellow dividers
     int UpdateFellow(int id, bool isLeader) override
     {
         bool isExisted = false;
@@ -149,13 +143,19 @@ public:
 
         return !isExisted;
     }
-    
-    //keepp track on leader alive - as member
+
+    // keepp track on leader alive - as member
     void LeaderBeating() override
     {
         leaderAlive->beating();
     }
-};
 
+private:
+    // check if the first divider in the network
+    int IsLeaderExisted();
+
+    // self check propose to be leader if have the lowest Id
+    int IsNextLeader();
+};
 
 #endif

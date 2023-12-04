@@ -14,7 +14,7 @@
 #define DES_ID_POS 5
 #define BOARDCAST_ID 000
 
-#define dividerTopic "divider_chatbox"
+#define dividerTopic "airportDemoDividers"
 
 const int MQTT_PORT = 1883;
 
@@ -44,11 +44,10 @@ public:
 class Messager : public ISender
 {
 private:
-   // IDividerListener *divListener;
+    // IDividerListener *divListener;
     PubSubClient *mqttClient;
 
 public:
-
     Messager(PubSubClient *mqttClient);
 
     int SetDeviceListener(IDividerListener *divListener);
@@ -59,13 +58,14 @@ public:
     // send message to a specific id in the network
     int SendMessage(const char *topic, std::string SrcId, std::string destId, std::string content) const override
     {
-        if (topic != nullptr)
+        if (topic == nullptr)
         {
             return 0;
         }
 
-        char data[100];
-        sprintf(data, "&%s:%s-%s;", SrcId.c_str(), destId.c_str(), content.c_str());
+        char data[200];
+        Serial.println(destId.c_str());
+        sprintf(data, "&%s-%s-%s;", SrcId.c_str(), destId.c_str(), content.c_str());
         mqttClient->publish(topic, data);
 
         return 1;
@@ -79,21 +79,20 @@ public:
             return 0;
         }
 
-        char data[100];
-        sprintf(data, "&%s-%s-%s;", SrcId.c_str(), std::to_string(BOARDCAST_ID), content.c_str());
+        char data[200];
+        // 000 to string problem?
+        sprintf(data, "&%s-%s-%s;", SrcId.c_str(), "000", content.c_str());
         mqttClient->publish(topic, data);
 
         return 1;
     }
 
-      // extract the id from the message following the id type - source or destination
+    // extract the id from the message following the id type - source or destination
     static std::string ExtractId(ID_TYPE type, std::string msg)
     {
         int idPos = type;
         return msg.substr(idPos, ID_LENGTH);
     }
-
-  
 };
 
 #endif
