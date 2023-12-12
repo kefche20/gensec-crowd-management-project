@@ -1,12 +1,12 @@
 #include "Messager.hpp"
 
-int Messager::ConnectTopic(const char *topic)
+int Messager::SetRoler(IRoler *roler)
 {
-    if (topic != nullptr)
+    if (roler == nullptr)
     {
         return 0;
     }
-    mqttClient->subscribe(topic);
+    this->roler = roler;
 
     return 1;
 }
@@ -46,8 +46,28 @@ void Messager::ConnectBroker()
     }
 }
 
+int Messager::ConnectTopic(const char *topic)
+{
+    if (topic == nullptr)
+    {
+        return 0;
+    }
+
+    mqttClient->subscribe(topic);
+    Serial.print("subsribe to topic: ");
+    Serial.println(topic);
+
+    return 1;
+}
+
+void Messager::MqttLoop()
+{
+    mqttClient->loop();
+}
+
 void Messager::ReadMessage(std::string msg)
 {
+
     if (!IsMsgVaid(msg))
     {
         return;
@@ -65,6 +85,7 @@ void Messager::ReadMessage(std::string msg)
     {
         return;
     }
+
     if (desId == BOARDCAST_ID)
     {
         HandleBoardcastMessage(srcId, msg);
@@ -75,7 +96,7 @@ void Messager::ReadMessage(std::string msg)
     }
 }
 
-void Messager::HandleBoardcastMessage(int srcId,std::string msg)
+void Messager::HandleBoardcastMessage(int srcId, std::string msg)
 {
     if (msg.find("DISCOVER") != std::string::npos)
     // new divider join the network
@@ -86,8 +107,6 @@ void Messager::HandleBoardcastMessage(int srcId,std::string msg)
     // new leader is assigned
     {
         roler->HandleRoleChanging(srcId, LEADER);
-        // 1. accept new leader by self-assigned as member
-        // 2. notify other its role? - no
     }
     else if (msg.find("NEW_MEMBER") != std::string::npos)
     {
@@ -113,6 +132,7 @@ void Messager::HandleDirectMessage(int srcId, std::string msg)
     }
     else if (msg.find("FELLOW_LEADER") != std::string::npos)
     {
+
         roler->HandleDiscoverResult(srcId, LEADER);
     }
     else if (msg.find("CUSTOMER_IN") != std::string::npos)

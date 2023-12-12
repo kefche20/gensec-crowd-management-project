@@ -43,13 +43,16 @@ private:
     hrtbt::Heartbeat *leaderAlive;
 
 public:
-    Messager(WiFiClient *espClient, hrtbt::Heartbeat *leaderAlive) : roler(roler), leaderAlive(leaderAlive)
+    Messager(WiFiClient *espClient, hrtbt::Heartbeat *leaderAlive) : roler(nullptr), leaderAlive(leaderAlive)
     {
         mqttClient = new PubSubClient(*espClient);
-        roler = nullptr;
     }
 
-    int SetRoler(IRoler *divListener);
+    Messager(PubSubClient *mqttClient, hrtbt::Heartbeat *leaderAlive) : mqttClient(mqttClient), roler(nullptr), leaderAlive(leaderAlive)
+    {
+    }
+
+    int SetRoler(IRoler *roler);
 
     int SetupMQTT(const char *broker, const int port, void (*callback)(char *, uint8_t *, unsigned int));
 
@@ -58,6 +61,7 @@ public:
     // connect to the new topic on the borker
     int ConnectTopic(const char *topic);
 
+    void MqttLoop();
     // perform logic of dealing with message
     void ReadMessage(std::string msg);
 
@@ -71,16 +75,15 @@ public:
         switch (nodeType)
         {
         case DIVIDER:
-            topic = topic_gates;
+            topic = topic_dividers;
             break;
         case GATE:
-            topic = topic_dividers;
+            topic = topic_gates;
             break;
         }
 
         char data[200];
-        Serial.println(std::to_string(destId).c_str());
-        sprintf(data, "&%s-%s-%s;", std::to_string(srcId).c_str(),std::to_string(destId).c_str(), content.c_str());
+        sprintf(data, "&%s-%s-%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), content.c_str());
         mqttClient->publish(topic, data);
 
         return 1;
@@ -95,10 +98,11 @@ public:
         switch (nodeType)
         {
         case DIVIDER:
-            topic = topic_gates;
+            topic = topic_dividers;
             break;
         case GATE:
-            topic = topic_dividers;
+            topic = topic = topic_gates;
+            
             break;
         }
 

@@ -5,8 +5,10 @@ bool IsLeader(Divider divider)
     return divider.GetLeader();
 }
 
-
-void SetRole(RoleMode newRoleMode);
+void DividerComns::SetSender(ISender *sender)
+{
+    this->sender = sender;
+}
 
 bool DividerComns::JustifyMember(int memberId)
 {
@@ -35,9 +37,9 @@ void DividerComns::SetDividerRole(int id, bool isLeader)
 
     // check if divider's id is found
     bool isFound = true;
-    if (divider == dividers.end() && !(*divider == id))
+    if (divider == dividers.end())
     {
-        isFound == false;
+        isFound = false;
     }
 
     // set/add divider with role
@@ -58,9 +60,9 @@ int DividerComns::IsNextLeader()
 
     auto divider = std::find_if(dividers.begin(), dividers.end(), IsLeader);
 
-    if (divider != dividers.end() || (divider == dividers.end() && divider->GetLeader()))
+    if (divider != dividers.end())
     {
-        isNextLeader == false;
+        isNextLeader = false;
     }
 
     return isNextLeader;
@@ -68,12 +70,19 @@ int DividerComns::IsNextLeader()
 
 void DividerComns::RemoveDivider(int id)
 {
-     // find the divider with the corresponding id
+    // find the divider with the corresponding id
     auto divider = std::find(dividers.begin(), dividers.end(), id);
 
     dividers.remove(*divider);
-}
 
+    Serial.println("---- remove divider id --- ");
+    divider = dividers.begin();
+    while (divider != dividers.end())
+    {
+        Serial.println(divider->GetId());
+        ++divider;
+    }
+}
 
 void DividerComns::dividersChat()
 {
@@ -95,6 +104,8 @@ void DividerComns::dividersChat()
     case NEUTRAL:
         if (role.IsNewMode())
         {
+            Serial.println("netrual");
+
             role.ClearEntryFlag();
         }
 
@@ -115,6 +126,7 @@ void DividerComns::dividersChat()
 
         if (leaderAlive->TrackingAlive() == hrtbt::status::DEAD)
         {
+            Serial.println("leader dead");
             sender->SendMessage(DIVIDER, id, "LEADER_DEAD");
             role.UpdateMode(NEUTRAL);
         }

@@ -52,7 +52,7 @@ struct Role
 
 /*
 // TODO
-    1. check if search function working 
+    1. check if search function working
     2. fix bug member autorest to NEUTRAL - //check again
 */
 class DividerComns : IRoler
@@ -73,7 +73,7 @@ public:
         timer.SetInterval(WAIT_INTERVAL);
     }
 
-    void SetRole(RoleMode newRoleMode);
+    void SetSender(ISender *sender);
 
     // divider request based on role
     void dividersChat();
@@ -90,12 +90,12 @@ public:
     {
         if (JustifyMember(newDividerId))
         {
-            SetDividerRole(newDividerId, false);                             // record new member with id & role
-            sender->SendMessage(DIVIDER, id, Role::RoleToString(role.mode)); // introduce its role to new members
+            SetDividerRole(newDividerId, false);                                           // record new member with id & role
+            sender->SendMessage(DIVIDER, id, newDividerId, Role::RoleToString(role.mode)); // introduce its role to new members
         }
         else
         {
-            // new member has the same id
+            sender->SendMessage(DIVIDER, id, "DISQUALIFY"); // introduce its role to new members
         }
     }
 
@@ -109,7 +109,7 @@ public:
             SetDividerRole(dividerId, false);
             break;
         case LEADER:
-            if (JustifyLeader(id))
+            if (JustifyLeader(dividerId))
             // accept new leader & become member!
             {
                 SetDividerRole(dividerId, false);
@@ -141,15 +141,17 @@ public:
     }
 
     // handle message: FELLOW_MEMBER + FELLOW_LEADER
-    void HandleDiscoverResult(int id, RoleMode dividerRole) override
+    void HandleDiscoverResult(int dividerId, RoleMode dividerRole) override
     {
+
         switch (dividerRole)
         {
         case MEMBER:
-            SetDividerRole(id, false);
+            SetDividerRole(dividerId, false);
             break;
         case LEADER:
-            SetDividerRole(id, true);
+
+            SetDividerRole(dividerId, true);
             role.UpdateMode(MEMBER);
 
             break;

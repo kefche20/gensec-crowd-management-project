@@ -25,6 +25,10 @@ public:
     {
     }
 
+    int GetId()
+    {
+        return id;
+    }
     // overload operator ==
     bool operator==(int id)
     {
