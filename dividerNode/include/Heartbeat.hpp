@@ -5,32 +5,29 @@
 
 namespace hrtbt
 {
-    enum status
-    {
-      DEAD,
-      ALIVE  
-    };
+  enum status
+  {
+    DEAD,
+    ALIVE
+  };
+
+  class Heartbeat
+  {
+  private:
+    long beatRate;
+    long maxOffset;
+
+    long lastBeat;
+
+  public:
+    Heartbeat(long beatRate, long maxOffset);
+
+    long GetBeatRate();
+
+    void RefreshLastBeat();
     
-    class Heartbeat
-    {
-       private: 
-       long heartbeat_frequence;
-       long max_offset;
-       long *now;
-
-       long last_time;
-       long last_interval;
-       long offset;
-       public: 
-
-       Heartbeat(long heartbeat_frequence, long max_offset, long *now);
-       
-       void beating();
-       
-       status trackingAlive();
-    };
-
-
+    status TrackingAlive();
+  };
 
 }
 

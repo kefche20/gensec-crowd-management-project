@@ -5,16 +5,20 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <string>
-
-#include "inteface.hpp"
+#include <Arduino.h>
+// libary
 #include "Messager.hpp"
+#include "config.hpp"
+#include "Heartbeat.hpp"
+
+// interface
+#include "IRoler.hpp"
+#include "ISender.hpp"
 
 #define ID_LENGTH 3
 #define SRC_ID_POS 1
 #define DES_ID_POS 5
 #define BOARDCAST_ID 000
-
-#define dividerTopic "airportDemoDividers"
 
 const int MQTT_PORT = 1883;
 
@@ -24,74 +28,126 @@ enum ID_TYPE
     DES_ID = DES_ID_POS
 };
 
-struct MQTT_parameter
-{
-public:
-    const char *broker;
-    const char *username;
-    const char *password;
-
-    MQTT_parameter(const char *broker, const char *username, const char *password) : broker(broker), username(username), password(password) {}
-};
-
 /*
-   Messager class
-    - handle the sending message actions and proccessing the incoming messages
-    - handle the reading message. - this function require the callback function to be put inside the class. However, some technique issue has emerged when trying to keep the callback function inside the Message class
-  //TODO: considering putting the callback function inside the messager inside the class or out side.
-          considering the functions of the Message
+//TODO
+    1. check leader beating when recieve leader beat
+    2. what happend if there are to notify to be the leader at the same time
+    3. message content to enumeration - protocol??
+    4. message response must be in message class or from divider where peform the check logic
 */
 class Messager : public ISender
 {
 private:
-    // IDividerListener *divListener;
+    IRoler *roler;
     PubSubClient *mqttClient;
+    hrtbt::Heartbeat *leaderAlive;
 
 public:
-    Messager(PubSubClient *mqttClient);
+    Messager(WiFiClient *espClient, hrtbt::Heartbeat *leaderAlive) : roler(roler), leaderAlive(leaderAlive)
+    {
+        mqttClient = new PubSubClient(*espClient);
+        roler = nullptr;
+    }
 
-    int SetDeviceListener(IDividerListener *divListener);
+    int SetRoler(IRoler *divListener);
+
+    int SetupMQTT(const char *broker, const int port, void (*callback)(char *, uint8_t *, unsigned int));
+
+    void ConnectBroker();
 
     // connect to the new topic on the borker
     int ConnectTopic(const char *topic);
 
+    // perform logic of dealing with message
+    void ReadMessage(std::string msg);
+
     // send message to a specific id in the network
-    int SendMessage(const char *topic, std::string SrcId, std::string destId, std::string content) const override
+    // TODO - make function/method for selecting topic
+    int SendMessage(Node_t nodeType, int srcId, int destId, std::string content) const override
     {
-        if (topic == nullptr)
+        const char *topic = "";
+
+        // selecting topic
+        switch (nodeType)
         {
-            return 0;
+        case DIVIDER:
+            topic = topic_gates;
+            break;
+        case GATE:
+            topic = topic_dividers;
+            break;
         }
 
         char data[200];
-        Serial.println(destId.c_str());
-        sprintf(data, "&%s-%s-%s;", SrcId.c_str(), destId.c_str(), content.c_str());
+        Serial.println(std::to_string(destId).c_str());
+        sprintf(data, "&%s-%s-%s;", std::to_string(srcId).c_str(),std::to_string(destId).c_str(), content.c_str());
         mqttClient->publish(topic, data);
 
         return 1;
     }
 
     // send message to all members
-    int SendMessageAll(const char *topic, std::string SrcId, std::string content) const override
+    int SendMessage(Node_t nodeType, int srcId, std::string content) const override
     {
-        if (topic == nullptr)
+        const char *topic = "";
+
+        // selecting topic
+        switch (nodeType)
         {
-            return 0;
+        case DIVIDER:
+            topic = topic_gates;
+            break;
+        case GATE:
+            topic = topic_dividers;
+            break;
         }
 
         char data[200];
         // 000 to string problem?
-        sprintf(data, "&%s-%s-%s;", SrcId.c_str(), "000", content.c_str());
+        sprintf(data, "&%s-%s-%s;", std::to_string(srcId).c_str(), "000", content.c_str());
         mqttClient->publish(topic, data);
 
         return 1;
     }
 
-    // extract the id from the message following the id type - source or destination
+    static bool ConnectWiFi(WiFiClient *wifi)
+    {
+        if (wifi == nullptr)
+        {
+            return false;
+        }
+        Serial.print("Connecting to ");
+
+        WiFi.begin(ssid, password);
+        Serial.println(ssid);
+
+        while (WiFi.status() != WL_CONNECTED)
+        {
+            Serial.print(".");
+            delay(500);
+        }
+
+        Serial.print("Connected.");
+        return true;
+    }
+
+private:
+    void HandleBoardcastMessage(int srcId, std::string msg);
+
+    void HandleDirectMessage(int srcId, std::string msg);
+    // extract the id from the message
     static std::string ExtractId(ID_TYPE type, std::string msg)
     {
-        int idPos = type;
-        return msg.substr(idPos, ID_LENGTH);
+        int idPosition = type;
+        return msg.substr(idPosition, ID_LENGTH);
+    }
+
+    static bool IsMsgVaid(std::string msg)
+    {
+        char f_letter = msg.front();
+        char l_letter = msg.back();
+
+        return f_letter == '&' && l_letter == ';';
     }
 };
 

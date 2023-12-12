@@ -7,7 +7,7 @@
 #include <string>
 
 // Divider
-#define DIVIDER_ID 200
+#define DIVIDER_ID 300
 
 // Heartbeat
 #define HEARTBEAT_FREQUENCE 5000
@@ -31,8 +31,10 @@ const char *REGISTER = "REGISTER";
 
 // MQTT Broker variables
 const char *mqtt_broker = "broker.hivemq.com";
-const char *topic_gates = "airportDemo";
-const char *topic_dividers = "airportDemoDividers";
+
+// const char *topic_gates = "airportDemo";
+// const char *topic_dividers = "airportDemoDividers";
+
 const char *mqtt_username = "Nedyalko";
 const char *mqtt_password = "1234";
 const int mqtt_port = 1883;
@@ -67,12 +69,12 @@ void setup()
   setupMQTT();
   ConnecBroker();
 
-  divider = new Divider(DIVIDER_ID, new hrtbt::Heartbeat(5000, 5000, &now));
-  messager = new Messager(&mqttClient);
+  // divider = new Divider(DIVIDER_ID, new hrtbt::Heartbeat(5000, 5000, &now));
+  //messager = new Messager(&mqttClient);
 
-  divider->UpdateSender(messager);
-  Serial.print("id: ");
-  Serial.println(divider->GetId());
+  // divider->UpdateSender(messager);
+  // Serial.print("id: ");
+  // Serial.println(divider->GetId());
   mqttClient.subscribe(topic_gates);
   mqttClient.subscribe(topic_dividers);
 
@@ -85,7 +87,7 @@ void loop()
 {
   now = (long)millis();
 
-  divider->DividersChat(now);
+ // divider->DividersChat(now);
   mqttClient.loop();
 }
 
@@ -152,74 +154,7 @@ void callback(char *topic, uint8_t *payload, unsigned int length)
 
   std::string msg = (char *)payload;
 
-  char f_letter = msg.front();
-  char l_letter = msg.back();
-
-  if (f_letter != '&' && l_letter != ';')
-  {
-    return;
-  }
-
-  // recieved id
-  int srcId = -1;
-  int desId = -1;
-
-  srcId = std::stoi(Messager::ExtractId(SRC_ID, msg));
-  desId = std::stoi(Messager::ExtractId(DES_ID, msg));
-
-  // join network - make friend - optimize this code
-  if (srcId == divider->GetId())
-  {
-    return;
-  }
-  if (desId == BOARDCAST_ID)
-  {
-    // Response new fellows
-    if (msg.find("DISCOVER") != std::string::npos)
-    {
-      std::string role = divider->GetRole();
-      messager->SendMessage(dividerTopic, std::to_string(divider->GetId()), std::to_string(srcId), role);
-      divider->UpdateFellow(srcId, false);
-      // add new fellow to list
-    }
-    // handle new appointed leader
-    else if (msg.find("NEW_LEADER") != std::string::npos)
-    {
-      divider->SetRole("MEMBER");
-      Serial.println(divider->GetRole().c_str());
-      messager->SendMessage(dividerTopic, std::to_string(divider->GetId()), std::to_string(srcId), "NEW_MEMBER");
-    }
-    else if (msg.find("NEW_MEMBER") != std::string::npos)
-    {
-      divider->UpdateFellow(srcId, false);
-    }
-    // handle leader alive
-    else if (msg.find("LEADER_ALIVE") != std::string::npos)
-    {
-      divider->LeaderBeating();
-    }
-    else if (msg.find("LEADER_DEAD") != std::string::npos)
-    {
-      divider->SetRole("NEUTRAL");
-    }
-  }
-  else if (desId == divider->GetId())
-  {
-    // new fellow listen to seniors
-    if (msg.find("FELLOW_MEMBER") != std::string::npos)
-    {
-      divider->UpdateFellow(srcId, false);
-    }
-    else if (msg.find("FELLOW_LEADER") != std::string::npos)
-    {
-      divider->SetRole("MEMBER");
-      divider->UpdateFellow(srcId, true);
-    }
-    else if (msg.find("CUSTOMER_IN") != std::string::npos)
-    {
-      // handle customer in
-    }
-  }
+  //messager->readMessage();
 
   Serial.print("\n\n");
 }
