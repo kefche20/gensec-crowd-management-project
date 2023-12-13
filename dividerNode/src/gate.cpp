@@ -1,6 +1,7 @@
 #include "gate.h"
 Gate::Gate(std::string id) : id(std::move(id)), isOpen(false), peopleCount(0)
 {
+  
 }
 std::string Gate::getId()
 {

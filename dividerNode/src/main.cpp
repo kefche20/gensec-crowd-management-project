@@ -1,17 +1,19 @@
 #include <Arduino.h>
-#include "config.h" // Contains WiFi passwords and other configs
+#include "config.hpp" // Contains WiFi passwords and other configs
 // Classes
-#include "gatemanager.h"
+//#include "gatemanager.h"
+
 #include "Messager.hpp"
-#include "Divider.hpp"
+#include "DividerComns.hpp"
+
 #include <string>
 
 // Divider
 #define DIVIDER_ID 200
 
 // Heartbeat
-#define HEARTBEAT_FREQUENCE 5000
-#define HEARTBEAT_MAX_OFFSET 5000
+#define BEATRATE 5000
+#define MAXOFFSET 5000
 
 // Local defines
 #define STATUS_CLOSED 0
@@ -31,15 +33,23 @@ const char *REGISTER = "REGISTER";
 
 // MQTT Broker variables
 const char *mqtt_broker = "broker.hivemq.com";
-const char *topic_gates = "airportDemo";
-const char *topic_dividers = "airportDemoDividers";
+
+// const char *topic_gates = "airportDemo";
+// const char *topic_dividers = "airportDemoDividers";
+
 const char *mqtt_username = "Nedyalko";
 const char *mqtt_password = "1234";
 const int mqtt_port = 1883;
 
 WiFiClient espClient;
-PubSubClient mqttClient(espClient);
 
+hrtbt::Heartbeat leaderAlive(BEATRATE,MAXOFFSET);
+
+Messager messager(&espClient,&leaderAlive);
+DividerComns dividerComns(DIVIDER_ID,&leaderAlive);
+
+
+/*
 // Gate management global variables
 const std::string MY_ID = "901";
 constexpr int MY_MAX_PEOPLE = 30;
@@ -48,95 +58,48 @@ constexpr int MY_MAX_PEOPLE = 30;
 long now = 0;
 
 GateManager *gateManager = new GateManager(); // Stores all gates for this divider.
-
-Divider *divider;
-Messager *messager;
+*/
 
 // Function definitions
+/*
 void connectToWiFi();
 void setupMQTT();
 void ConnecBroker();
-void callback(char *topic, byte *payload, unsigned int length);
+*/
+void callback(char *topic, uint8_t *payload, unsigned int length);
+
+
 
 void setup()
 {
   Serial.begin(9600);
+  
+  Serial.println("start setup!");
+  messager.SetRoler((IRoler*)&dividerComns);
+  dividerComns.SetSender((ISender*)&messager);
+    
+  //network connection
+  Messager::ConnectWiFi(&espClient);  //working 
 
-  // Network connection
-  connectToWiFi();
-  setupMQTT();
-  ConnecBroker();
 
-  divider = new Divider(DIVIDER_ID, new hrtbt::Heartbeat(5000, 5000, &now));
-  messager = new Messager(&mqttClient);
+   messager.SetupMQTT(mqtt_broker,mqtt_port,callback); 
+   messager.ConnectBroker();  
+   
+  //topic subscription
+  messager.ConnectTopic(topic_dividers);
+  messager.ConnectTopic(topic_gates);
 
-  divider->UpdateSender(messager);
-  Serial.print("id: ");
-  Serial.println(divider->GetId());
-  mqttClient.subscribe(topic_gates);
-  mqttClient.subscribe(topic_dividers);
 
-  // sth wrong with the connectTOpic her
-  // messager->ConnectTopic(topic_gates);
-  // messager->ConnectTopic(topic_dividers);
 }
 
 void loop()
 {
-  now = (long)millis();
-
-  divider->DividersChat(now);
-  mqttClient.loop();
-}
-
-void connectToWiFi()
-// Function to begin the WiFi connection of the MQTT.
-{
-  Serial.print("Connecting to ");
-
-  WiFi.begin(ssid, password);
-  Serial.println(ssid);
-
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    Serial.print(".");
-    delay(500);
-  }
-
-  Serial.print("Connected.");
-}
-
-void setupMQTT()
-{
-  mqttClient.setServer(mqtt_broker, mqtt_port);
-  mqttClient.setCallback(callback);
-}
-
-void ConnecBroker()
-{
-  // connect to mqtt
-  while (!mqttClient.connected())
-  {
-    String client_id = "esp32Gates";
-    client_id += String(WiFi.macAddress());
-    Serial.printf("%s is connecting...\n", client_id.c_str());
-    if (mqttClient.connect(client_id.c_str()))
-    {
-      Serial.println("Connected to the broker!");
-    }
-    else
-    {
-      Serial.print("Error: ");
-      Serial.print(mqttClient.state());
-      delay(2000);
-      Serial.println("Restarting ESP:");
-      ESP.restart();
-    }
-  }
+ dividerComns.dividersChat();
+ 
+ messager.MqttLoop();
 }
 
 // handle the message coming from the networks
-// REVIEW - check divide which message is read when divider play which role
 void callback(char *topic, uint8_t *payload, unsigned int length)
 // Function is automatically called from the MQTT library when
 // a new message appears on the topic.
@@ -149,80 +112,15 @@ void callback(char *topic, uint8_t *payload, unsigned int length)
   {
     Serial.print((char)payload[i]);
   }
-
+  
+  *(payload + length) = '\0';
   std::string msg = (char *)payload;
-
-  char f_letter = msg.front();
-  char l_letter = msg.back();
-
-  if (f_letter != '&' && l_letter != ';')
-  {
-    return;
-  }
-
-  // recieved id
-  int srcId = -1;
-  int desId = -1;
-
-  srcId = std::stoi(Messager::ExtractId(SRC_ID, msg));
-  desId = std::stoi(Messager::ExtractId(DES_ID, msg));
-
-  // join network - make friend - optimize this code
-  if (srcId == divider->GetId())
-  {
-    return;
-  }
-  if (desId == BOARDCAST_ID)
-  {
-    // Response new fellows
-    if (msg.find("DISCOVER") != std::string::npos)
-    {
-      std::string role = divider->GetRole();
-      messager->SendMessage(dividerTopic, std::to_string(divider->GetId()), std::to_string(srcId), role);
-      divider->UpdateFellow(srcId, false);
-      // add new fellow to list
-    }
-    // handle new appointed leader
-    else if (msg.find("NEW_LEADER") != std::string::npos)
-    {
-      divider->SetRole("MEMBER");
-      Serial.println(divider->GetRole().c_str());
-      messager->SendMessage(dividerTopic, std::to_string(divider->GetId()), std::to_string(srcId), "NEW_MEMBER");
-    }
-    else if (msg.find("NEW_MEMBER") != std::string::npos)
-    {
-      divider->UpdateFellow(srcId, false);
-    }
-    // handle leader alive
-    else if (msg.find("LEADER_ALIVE") != std::string::npos)
-    {
-      divider->LeaderBeating();
-    }
-    else if (msg.find("LEADER_DEAD") != std::string::npos)
-    {
-      divider->SetRole("NEUTRAL");
-    }
-  }
-  else if (desId == divider->GetId())
-  {
-    // new fellow listen to seniors
-    if (msg.find("FELLOW_MEMBER") != std::string::npos)
-    {
-      divider->UpdateFellow(srcId, false);
-    }
-    else if (msg.find("FELLOW_LEADER") != std::string::npos)
-    {
-      divider->SetRole("MEMBER");
-      divider->UpdateFellow(srcId, true);
-    }
-    else if (msg.find("CUSTOMER_IN") != std::string::npos)
-    {
-      // handle customer in
-    }
-  }
+  messager.ReadMessage(msg);
 
   Serial.print("\n\n");
 }
+
+
 
 /*
 void ReceiveAndParseData(byte *payload, unsigned int length);

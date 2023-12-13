@@ -2,160 +2,56 @@
 #define DIVIDER_HPP
 
 #include <iostream>
-#include <list>
 
-#include "inteface.hpp"
-#include "Messager.hpp"
-#include "Heartbeat.hpp"
 
-enum Role
-{
-    IDLE,
-    NEUTRAL,
-    LEADER,
-    MEMBER
-};
 
-struct Timer
-{
-    long interval;
-    long pre_time;
-};
-
-class Device
-{
-private:
-    int id;
-
-public:
-    Device(int id)
-    {
-        this->id = id;
-    }
-
-    int getId()
-    {
-        return this->id;
-    }
-};
-
-// TODO: integrate Divider class and Gate Manager class together
-class FellowDivider : public Device
-{
-private:
-    bool isLeader;
-    //  Gate *leastBusyGate;
-
-public:
-    FellowDivider(int id, bool isLeader);
-    void SetLeaderSta(bool sta);
-
-    bool IsLeader();
-};
-
+// TODO
 /*
-   Divider class keep track on the communication between dividers
-      - In the divider network, there will be one leader and others are members.
-      - The leader will recieve the information from the member and proccess the information.
-      - The Leader will be reasign if the old leader is dead.
-   //TODO: find a proper design solution to handle the role play actions - transition from member to leader.
+1. when to overload operator ()/operator ==
+2. std::find() and std::find_if() using x to find or find the x?? are the y same?
+3. define of timer nterval ???
 */
 
-class Divider : public IDividerListener
+#define WAIT_INTERVAL 5000
+
+class Divider
 {
 private:
-    // general
     int id;
-    std::list<FellowDivider> dividers;
-    ISender *sender;
-
-    // role play
-    Role role;
-    Role preRole;
-    Timer timer;
-    hrtbt::Heartbeat *leaderAlive;
+    bool isLeader;
 
 public:
-    Divider(int id, hrtbt::Heartbeat *leaderAlive);
-
-    int GetId();
-
-    // upate the sender - interface of messager for sending msg function
-    int UpdateSender(ISender *sender);
-
-    // behaviour of divider based on the current play role
-    void DividersChat(long now);
-
-    // get the current play role
-    std::string GetRole() override
+    Divider(int id, bool isLeader) : id(id), isLeader(isLeader)
     {
-        switch (role)
-        {
-        case LEADER:
-            return "FELLOW_LEADER";
-            break;
-        case MEMBER:
-            return "FELLOW_MEMBER";
-            break;
-        default:
-            return "FELLOW_NETRUAL";
-            break;
-        }
     }
 
-    // set the new play role
-    void SetRole(std::string newRole) override
+    int GetId()
     {
-        if (newRole == "MEMBER")
-        {
-            role = MEMBER;
-        }
-        else if (newRole == "LEADER")
-        {
-            role = LEADER;
-        }
-        else if (newRole == "NEUTRAL")
-        {
-            role = NEUTRAL;
-        }
+        return id;
+    }
+    // overload operator ==
+    bool operator==(int id)
+    {
+        return this->id == id;
     }
 
-    // add or update new fellow dividers
-    int UpdateFellow(int id, bool isLeader) override
+    bool operator==(const Divider &divider)
     {
-        bool isExisted = false;
-
-        // check if divider is already added
-        std::list<FellowDivider>::iterator divider;
-        for (divider = dividers.begin(); divider != dividers.end() && !isExisted; ++divider)
-        {
-            if (divider->getId() == id)
-            {
-                divider->SetLeaderSta(isLeader);
-                isExisted = true;
-            }
-        }
-        // add the divider into list
-        if (!isExisted)
-        {
-            dividers.push_back(FellowDivider(id, isLeader));
-        }
-
-        return !isExisted;
+        return this->id == divider.id;
     }
 
-    // keepp track on leader alive - as member
-    void LeaderBeating() override
+    // get the role sta if leader
+    bool GetLeader()
     {
-        leaderAlive->beating();
+        return isLeader;
     }
 
-private:
-    // check if the first divider in the network
-    int IsLeaderExisted();
-
-    // self check propose to be leader if have the lowest Id
-    int IsNextLeader();
+    // set the role sta
+    void SetLeader(bool sta)
+    {
+        isLeader = sta;
+    }
 };
+
 
 #endif
