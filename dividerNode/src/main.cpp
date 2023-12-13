@@ -9,7 +9,7 @@
 #include <string>
 
 // Divider
-#define DIVIDER_ID 200
+#define DIVIDER_ID 300
 
 // Heartbeat
 #define BEATRATE 5000
@@ -34,9 +34,6 @@ const char *REGISTER = "REGISTER";
 // MQTT Broker variables
 const char *mqtt_broker = "broker.hivemq.com";
 
-// const char *topic_gates = "airportDemo";
-// const char *topic_dividers = "airportDemoDividers";
-
 const char *mqtt_username = "Nedyalko";
 const char *mqtt_password = "1234";
 const int mqtt_port = 1883;
@@ -49,23 +46,7 @@ Messager messager(&espClient,&leaderAlive);
 DividerComns dividerComns(DIVIDER_ID,&leaderAlive);
 
 
-/*
-// Gate management global variables
-const std::string MY_ID = "901";
-constexpr int MY_MAX_PEOPLE = 30;
 
-// global timing variable
-long now = 0;
-
-GateManager *gateManager = new GateManager(); // Stores all gates for this divider.
-*/
-
-// Function definitions
-/*
-void connectToWiFi();
-void setupMQTT();
-void ConnecBroker();
-*/
 void callback(char *topic, uint8_t *payload, unsigned int length);
 
 

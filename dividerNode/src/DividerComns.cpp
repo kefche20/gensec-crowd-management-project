@@ -54,11 +54,20 @@ void DividerComns::SetDividerRole(int id, bool isLeader)
     }
 }
 
+// TODO: check how lampda chan be used properly
 int DividerComns::IsNextLeader()
 {
     bool isNextLeader = true;
 
-    auto divider = std::find_if(dividers.begin(), dividers.end(), IsLeader);
+    int checkId = this->id;
+
+    auto IsLowerPriority = [&checkId](Divider &divider)
+    {
+        return checkId > divider.GetId();
+    };
+
+    // check if there is any other id has higher priority
+    auto divider = std::find_if(dividers.begin(), dividers.end(), IsLowerPriority);
 
     if (divider != dividers.end())
     {
@@ -68,20 +77,26 @@ int DividerComns::IsNextLeader()
     return isNextLeader;
 }
 
+// TODO: check optimizing  remove leader function
+void DividerComns::RemoveLeader()
+{
+    // find the divider with the corresponding id
+    auto divider = std::find_if(dividers.begin(), dividers.end(), IsLeader);
+
+    if (divider == dividers.end())
+    {
+        return;
+    }
+
+    dividers.remove(*divider);
+}
+
 void DividerComns::RemoveDivider(int id)
 {
     // find the divider with the corresponding id
     auto divider = std::find(dividers.begin(), dividers.end(), id);
 
     dividers.remove(*divider);
-
-    Serial.println("---- remove divider id --- ");
-    divider = dividers.begin();
-    while (divider != dividers.end())
-    {
-        Serial.println(divider->GetId());
-        ++divider;
-    }
 }
 
 void DividerComns::dividersChat()
@@ -104,17 +119,14 @@ void DividerComns::dividersChat()
     case NEUTRAL:
         if (role.IsNewMode())
         {
-            Serial.println("netrual");
-
+            if (IsNextLeader())
+            {
+                sender->SendMessage(DIVIDER, id, "NEW_LEADER");
+                role.UpdateMode(LEADER);
+            }
             role.ClearEntryFlag();
         }
 
-        // self propose to be the leader if have the lowest id
-        if (IsNextLeader())
-        {
-            sender->SendMessage(DIVIDER, id, "NEW_LEADER");
-            role.UpdateMode(LEADER);
-        }
         break;
 
     case MEMBER:
@@ -126,7 +138,7 @@ void DividerComns::dividersChat()
 
         if (leaderAlive->TrackingAlive() == hrtbt::status::DEAD)
         {
-            Serial.println("leader dead");
+            RemoveLeader();
             sender->SendMessage(DIVIDER, id, "LEADER_DEAD");
             role.UpdateMode(NEUTRAL);
         }
@@ -135,6 +147,7 @@ void DividerComns::dividersChat()
     case LEADER:
         if (role.IsNewMode())
         {
+
             timer.Reset();
             timer.SetInterval(leaderAlive->GetBeatRate());
             role.ClearEntryFlag();
@@ -143,6 +156,7 @@ void DividerComns::dividersChat()
         if (timer.isTimeOut())
         // leader'heart beats for a beatrate duration
         {
+
             sender->SendMessage(DIVIDER, id, "LEADER_ALIVE");
             timer.Reset();
         }

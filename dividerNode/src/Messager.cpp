@@ -126,7 +126,7 @@ void Messager::HandleBoardcastMessage(int srcId, std::string msg)
 void Messager::HandleDirectMessage(int srcId, std::string msg)
 {
     // new fellow listen to seniors
-    if (msg.find("FELLOW_MEMBER") != std::string::npos)
+    if (msg.find("FELLOW_MEMBER") != std::string::npos || msg.find("FELLOW_NEUTRAL") != std::string::npos)
     {
         roler->HandleDiscoverResult(srcId, MEMBER);
     }

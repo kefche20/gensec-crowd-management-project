@@ -45,7 +45,7 @@ struct Role
             return "FELLOW_MEMBER";
             break;
         default:
-            return "FELLOW_NETRUAL";
+            return "FELLOW_NEUTRAL";
         }
     }
 };
@@ -112,7 +112,7 @@ public:
             if (JustifyLeader(dividerId))
             // accept new leader & become member!
             {
-                SetDividerRole(dividerId, false);
+                SetDividerRole(dividerId, true);
                 role.UpdateMode(MEMBER);
                 sender->SendMessage(DIVIDER, id, Role::RoleToString(role.mode)); // double check? make sure other know it as member.
             }
@@ -134,8 +134,8 @@ public:
             leaderAlive->RefreshLastBeat();
             break;
         case hrtbt::DEAD:
-            RemoveDivider(leaderId);
-            role.UpdateMode(NEUTRAL);
+          //  RemoveDivider(leaderId);
+          //  role.UpdateMode(NEUTRAL);
             break;
         }
     }
@@ -168,6 +168,8 @@ private:
 
     void RemoveDivider(int id);
 
+    void RemoveLeader();
+    
     int IsNextLeader();
 };
 
