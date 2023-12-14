@@ -7,7 +7,7 @@
 #define ECHO_PIN_2 14
 
 #define CATCH_DISTANCE 50
-#define MAX_DETECT_DELAY 100
+#define MAX_DETECT_DELAY 50
 
 typedef enum
 {
@@ -53,6 +53,7 @@ void setup()
   second_catch_val = 0;
   nr_of_people = 0;
   start_time = millis();
+  Serial.println("Sensor Demo Start!");
 }
 
 void loop()
@@ -72,8 +73,19 @@ void loop()
         sensor_state = DETECTING;
         movement_state = FIRST_STEP;
       }
+      else if ((first_catch_val > CATCH_DISTANCE) && (second_catch_val <= CATCH_DISTANCE))
+      {
+        sensor_state = WAITING;
+      }
+      else if ((first_catch_val <= CATCH_DISTANCE) && (second_catch_val <= CATCH_DISTANCE))
+      {
+        sensor_state = WAITING;
+      }
+      else if ((first_catch_val > CATCH_DISTANCE) && (second_catch_val > CATCH_DISTANCE))
+      {
+        sensor_state = WAITING;
+      }
       break;
-
     case DETECTING:
       switch (movement_state)
       {
@@ -81,6 +93,11 @@ void loop()
         if ((first_catch_val <= CATCH_DISTANCE) && (second_catch_val <= CATCH_DISTANCE))
         {
           movement_state = SECOND_STEP;
+        }
+        else if ((first_catch_val > CATCH_DISTANCE) && (second_catch_val <= CATCH_DISTANCE))
+        {
+          movement_state = IDLE;
+          sensor_state = WAITING;
         }
         break;
       case SECOND_STEP:
