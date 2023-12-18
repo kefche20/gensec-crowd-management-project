@@ -1,12 +1,15 @@
 #include "Messager.hpp"
 
-int Messager::SetRoler(IRoler *roler)
+int Messager::SetListener(IDivListener *divListener, INodeShifter *gateListener, IGuider *guider)
 {
-    if (roler == nullptr)
+    if (divListener == nullptr)
     {
         return 0;
     }
-    this->roler = roler;
+
+    this->divListener = divListener;
+    this->gateListener = gateListener;
+    this->guider = guider;
 
     return 1;
 }
@@ -17,6 +20,7 @@ int Messager::SetupMQTT(const char *broker, const int port, void (*callback)(cha
     {
         return 0;
     }
+
     mqttClient->setServer(broker, port);
     mqttClient->setCallback(callback);
 
@@ -65,7 +69,7 @@ void Messager::MqttLoop()
     mqttClient->loop();
 }
 
-void Messager::ReadMessage(std::string msg)
+void Messager::ReadDividerMessage(std::string msg)
 {
 
     if (!IsMsgVaid(msg))
@@ -76,67 +80,120 @@ void Messager::ReadMessage(std::string msg)
     // recieved id
     int srcId = -1;
     int desId = -1;
-
-    srcId = std::stoi(ExtractId(SRC_ID, msg));
-    desId = std::stoi(ExtractId(DES_ID, msg));
+    int msgCode = -1;
+    srcId = std::stoi(ExtractContent(SRC_ID, msg));
+    desId = std::stoi(ExtractContent(DES_ID, msg));
+    msgCode = std::stoi(ExtractContent(MSG, msg));
 
     // join network - make friend - optimize this code
-    if (srcId == roler->GetId())
+    if (srcId == divListener->GetId())
     {
         return;
     }
 
+    // TODO: check send wrong code
     if (desId == BOARDCAST_ID)
     {
-        HandleBoardcastMessage(srcId, msg);
+        HandleBoardcastMessage(srcId, (DividerBoardcastMessage)msgCode);
     }
-    else if (desId == roler->GetId())
+    else if (desId == divListener->GetId())
     {
-        HandleDirectMessage(srcId, msg);
+        HandleDirectMessage(srcId, (DividerDirectMessage)msgCode);
     }
 }
 
-void Messager::HandleBoardcastMessage(int srcId, std::string msg)
+void Messager::HandleBoardcastMessage(int srcId, DividerBoardcastMessage msgCode)
 {
-    if (msg.find("DISCOVER") != std::string::npos)
-    // new divider join the network
+    switch (msgCode)
     {
-        roler->HandleNewDivider(srcId);
-    }
-    else if (msg.find("NEW_LEADER") != std::string::npos)
-    // new leader is assigned
-    {
-        roler->HandleRoleChanging(srcId, LEADER);
-    }
-    else if (msg.find("NEW_MEMBER") != std::string::npos)
-    {
-        roler->HandleRoleChanging(srcId, MEMBER);
-    }
-    // handle leader alive
-    else if (msg.find("LEADER_ALIVE") != std::string::npos)
-    {
-        roler->HandleLeaderAlive(srcId, hrtbt::ALIVE);
-    }
-    else if (msg.find("LEADER_DEAD") != std::string::npos)
-    {
-        roler->HandleLeaderAlive(srcId, hrtbt::DEAD);
+    case DISCOVER:
+        divListener->HandleNewDivider(srcId);
+
+        break;
+    case NEW_LEADER:
+        divListener->HandleRoleChanging(srcId, LEADER);
+
+        break;
+    case NEW_MEMBER:
+        divListener->HandleRoleChanging(srcId, MEMBER);
+
+        break;
+    case LEADER_ALIVE:
+        divListener->HandleLeaderAlive(srcId, hrtbt::ALIVE);
+
+        break;
+    case LEADER_DEAD:
+        divListener->HandleLeaderAlive(srcId, hrtbt::DEAD);
+
+        break;
+    default:
+        // handle unvalid message
+        break;
+        ;
     }
 }
 
-void Messager::HandleDirectMessage(int srcId, std::string msg)
+// TODO: check clean code
+void Messager::HandleDirectMessage(int srcId, DividerDirectMessage msgCode)
 {
-    // new fellow listen to seniors
-    if (msg.find("FELLOW_MEMBER") != std::string::npos || msg.find("FELLOW_NEUTRAL") != std::string::npos)
+    switch (msgCode)
     {
-        roler->HandleDiscoverResult(srcId, MEMBER);
-    }
-    else if (msg.find("FELLOW_LEADER") != std::string::npos)
-    {
+    case FELLOW_MEMBER:
+    case FELLOW_NEUTRAL:
+        divListener->HandleDiscoverResult(srcId, MEMBER);
 
-        roler->HandleDiscoverResult(srcId, LEADER);
+        break;
+    case FELLOW_LEADER:
+        divListener->HandleDiscoverResult(srcId, LEADER);
+        break;
+
+        break;
     }
-    else if (msg.find("CUSTOMER_IN") != std::string::npos)
+}
+
+void Messager::ReadGateMessage(std::string msg)
+{
+    if (!IsMsgVaid(msg))
     {
-        // handle customer in
+        return;
     }
+
+    // recieved id
+    int srcId = -1;
+    int desId = -1;
+    int msgCode = -1;
+    int data = -1;
+
+    srcId = std::stoi(ExtractContent(SRC_ID, msg));
+    desId = std::stoi(ExtractContent(DES_ID, msg));
+    msgCode = std::stoi(ExtractContent(MSG, msg));
+    msgCode = std::stoi(ExtractContent(DATA, msg));
+
+    // join network - make friend - optimize this code
+    // FIXME: change the check id from the customer guider
+
+    if (desId == divListener->GetId())
+    {
+        HandleGateMessage(srcId, (GateMessage)msgCode);
+    }
+    else
+    {
+        // handle stupid gate go to the wrong divider
+    }
+}
+
+void Messager::HandleGateMessage(int srcId, GateMessage msgCode)
+{
+   
+switch(msgCode)
+{
+case REGISTER:
+gateListener->AddNode(srcId);
+break;
+default:
+break;
+
+}
+ 
+
 }

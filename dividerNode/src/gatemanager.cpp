@@ -1,30 +1,29 @@
-#include "gatemanager.h"
+#include "GateManager.hpp"
 
-GateManager::GateManager() : openThreshold(5), closeThreshold(0)
+GateManager::GateManager(int maxGateNum, int openThreshold, int closeThreshold) : maxGateNum(maxGateNum), openThreshold(openThreshold), closeThreshold(closeThreshold), generalState(ALL_FREE)
 {
 }
-
-void GateManager::addGate(std::string id)
+void GateManager::SetGateState(int gateId, bool sta)
 {
-    if (gates.size() == MAX_GATES)
+    auto gate = std::find(gates.begin(), gates.end(), gateId);
+
+    if (gate != gates.end())
     {
-        // TODO:: Throw error when too many gates are registered
-        return;
+        gate->SetOpenSta(sta);
     }
-    auto result = gates.emplace(std::make_pair(id, Gate(id)));
-    if (!result.second)
+    else
     {
-        // TODO:: Throw error when gate is already registered
-        return;
+        // handle
     }
 }
 
-void GateManager::openGate(std::string id)
+void GateManager::addPersonToGate(int gateId, int numOfPeople)
 {
-    auto it = gates.find(id);
-    if (it != gates.end())
+    auto gate = std::find(gates.begin(), gates.end(), gateId);
+
+    if (gate != gates.end())
     {
-        it->second.open();
+        gate->addPerson(numOfPeople);
     }
     else
     {
@@ -32,103 +31,317 @@ void GateManager::openGate(std::string id)
     }
 }
 
-void GateManager::closeGate(std::string id)
-{
-    auto it = gates.find(id);
-    if (it != gates.end())
-    {
-        it->second.close();
-    }
-    else
-    {
-        // Handle the case where the gate does not exist
-    }
-}
+// TODO: check purpose of this function
+//  void GateManager::refreshNumOfPeopleInGate(int id, int numOfPeople)
+//  {
+//      // if (gates.find(id) != gates.end())
+//      // {
+//      //     gates[id].refreshCount(numOfPeople);
+//      // }
+//      // else
+//      // {
+//      //     // Handle case of non-existing gate
+//      // }
+//  }
 
-void GateManager::addPersonToGate(std::string id)
+// TODO: check the allocatate person to gate function
+void GateManager::allocatePersonToGate()
 {
-    auto it = gates.find(id);
-    if (it != gates.end())
-    {
-        it->second.addPerson();
-    }
-    else
-    {
-        // Handle the case where the gate does not exist
-    }
-}
-
-void GateManager::openAnIdleGate()
-{
-    // for (auto &gate : gates)
+    // std::string gateId = findLeastBusyGate();
+    // if (gateId != "")
     // {
-    //     if (gate.second.isOpened() == false)
-    //     {
-    //         gate.second.open();
-    //         break; // Open only one gate at a time
-    //     }
+    //     addPersonToGate(gateId);
     // }
-}
-
-void GateManager::refreshNumOfPeopleInGate(std::string id, int numOfPeople)
-{
-    // if (gates.find(id) != gates.end())
-    // {
-    //     gates[id].refreshCount(numOfPeople);
-    // }
-    // else
-    // {
-    //     // Handle case of non-existing gate
-    // }
-}
-
-void GateManager::closeAnIdleGate()
-{
-    // for (auto &gate : gates)
-    // {
-    //     if (gate.second.isOpened() && gate.second.getLineCount() == closeThreshold)
-    //     {
-    //         gate.second.close();
-    //         break; // Close only one gate at a time
-    //     }
-    // }
-}
-
-std::string GateManager::findLeastBusyGate()
-{
-    int minCount = 100;
-    std::string minGateId = "";
-
-    // for (auto &gate : gates)
-    // {
-    //     if (gate.second.isOpened() && gate.second.getLineCount() < minCount)
-    //     {
-    //         minCount = gate.second.getLineCount();
-    //         minGateId = gate.first;
-    //     }
-    // }
-
-    return minGateId;
-}
-
-void GateManager::allocatePersonToLeastBusyGate()
-{
-    std::string gateId = findLeastBusyGate();
-    if (gateId != "")
-    {
-        addPersonToGate(gateId);
-    }
     // Handle the case when no gate is available or all are busy
 }
 
-int GateManager::getLineCount(std::string id)
+
+/*
+  - Gate send heartbeat gonna be stored in the queue  id store
+  //TODO -
+   2. check send msg for open and close
+*/
+void GateManager::GateOpenCloseLogic()
 {
-    auto it = gates.find(id);
-    if (it != gates.end())
+    switch (traffic.state)
     {
-        return it->second.getLineCount();
+    case IDLE_T:
+        if (traffic.IsNewState())
+        {
+
+            traffic.ClearEntryFlag();
+        }
+
+        break;
+
+    case NORMAL:
+    {
+        if (traffic.IsNewState())
+        {
+
+            traffic.ClearEntryFlag();
+        }
+
+        // get the free space rate
+        int freeSpaceRate = GetFreeSpaceRate();
+
+        int numOfActiveGate = GetActiveGate();
+
+        // check general state of active gates
+        if (numOfActiveGate < gates.size() && numOfActiveGate > 1)
+        {
+            generalState = PARTY_DUTY;
+        }
+
+        // more gate in duty
+        if (freeSpaceRate > openThreshold && generalState != ALL_IN_DUTY)
+        {
+            traffic.state = CROWD;
+        }
+
+        // less gate in duty
+        if (freeSpaceRate < closeThreshold && generalState != ONE_IN_DUTY)
+        {
+            traffic.state = UNOCCUPIED;
+        }
     }
-    else
+    break;
+
+    case CROWD:
     {
+        if (traffic.IsNewState())
+        {
+
+            traffic.ClearEntryFlag();
+        }
+
+        int openGateId = openAnIdleGate();
+
+        // open more gate
+        if (openGateId != -1)
+        {
+            // notify the customer guider
+            // send the msg to close gate
+        }
+        else
+        {
+            generalState = ALL_IN_DUTY;
+        }
+
+        if (GetFreeSpaceRate() < openThreshold || generalState == ALL_IN_DUTY)
+        {
+            traffic.state = NORMAL;
+        }
+
+        break;
+    }
+    case UNOCCUPIED:
+        if (traffic.IsNewState())
+        {
+
+            traffic.ClearEntryFlag();
+        }
+
+        // close gate until one is
+        if (GetActiveGate() > 1)
+        {
+            int closeGateId = closeAnIdleGate();
+            // notify the customer guider
+            // send the msg to close gate
+        }
+        else
+        {
+            generalState = ONE_IN_DUTY;
+        }
+
+        // close gate
+        if (GetFreeSpaceRate() > closeThreshold || generalState == ALL_FREE)
+        {
+            traffic.state = NORMAL;
+        }
+        break;
+
+    default:
+        // handle invalid case
+        break;
     }
 }
+
+int GateManager::GetActiveGate()
+{
+    int numOfActiveGate = 0;
+    for (auto &gate : gates)
+    {
+        if (gate.GetOpenSta())
+        {
+            numOfActiveGate++;
+        }
+    }
+
+    return numOfActiveGate;
+}
+
+float GateManager::GetFreeSpaceRate()
+{
+    int sumOfpeople = 0;
+    int totalSpace = 0;
+
+    for (auto &gate : gates)
+    {
+        sumOfpeople += gate.getLineCount();
+        totalSpace += gate.GetMaxCapacity();
+    }
+
+    float freeSpaceRate = ((float)sumOfpeople / (float)totalSpace) * 100.0;
+
+    return freeSpaceRate;
+}
+
+int GateManager::openAnIdleGate()
+{
+    int openGateId = -1;
+    for (auto &gate : gates)
+    {
+        if (gate.GetOpenSta() == false)
+        {
+            gate.SetOpenSta(true);
+            openGateId = gate.GetId();
+            break; // Open only one gate at a time
+        }
+    }
+
+    return openGateId;
+}
+
+// TODO: check purpose of this function
+int GateManager::closeAnIdleGate()
+{
+    int closeGateId = -1;
+    for (auto &gate : gates)
+    {
+        if (gate.GetOpenSta())
+        {
+            gate.SetOpenSta(true);
+            closeGateId = gate.GetId();
+            break; // Close only one gate at a time
+        }
+    }
+
+    return closeGateId;
+}
+
+//-------------------------------------//
+
+// void GateManager::addGate(int id)
+// {
+
+//     if (gates.size() == MAX_GATES)
+//     {
+//         // TODO:: Throw error when too many gates are registered
+//         return;
+//     }
+//     auto result = gates.emplace(std::make_pair(id, Gate(id)));
+//     if (!result.second)
+//     {
+//         // TODO:: Throw error when gate is already registered
+//         return;
+//     }
+// }
+
+// void GateManager::openGate(int id)
+// {
+//    auto it = gates.find(id);
+
+//    if (it != gates.end())
+//     {
+//         it->second.open();
+//     }
+//     else
+//     {
+//         // Handle the case where the gate does not exist
+//     }
+// }
+
+// void GateManager::closeGate(int id)
+// {
+//     auto it = gates.find(id);
+//     if (it != gates.end())
+//     {
+//         it->second.close();
+//     }
+//     else
+//     {
+//         // Handle the case where the gate does not exist
+//     }
+// }
+
+// void GateManager::addPersonToGate(int id)
+// {
+//     auto it = gates.find(id);
+//     if (it != gates.end())
+//     {
+//         it->second.addPerson();
+//     }
+//     else
+//     {
+//         // Handle the case where the gate does not exist
+//     }
+// }
+
+// void GateManager::openAnIdleGate()
+// {
+//     for (auto &gate : gates)
+//     {
+//         if (gate.second.isOpened() == false)
+//         {
+//             gate.second.open();
+//             break; // Open only one gate at a time
+//         }
+//     }
+// }
+
+// void GateManager::refreshNumOfPeopleInGate(int id, int numOfPeople)
+// {
+//     if (gates.find(id) != gates.end())
+//     {
+//         gates[id].refreshCount(numOfPeople);
+//     }
+//     else
+//     {
+//         // Handle case of non-existing gate
+//     }
+// }
+
+// void GateManager::closeAnIdleGate()
+// {
+//     for (auto &gate : gates)
+//     {
+//         if (gate.second.isOpened() && gate.second.getLineCount() == closeThreshold)
+//         {
+//             gate.second.close();
+//             break; // Close only one gate at a time
+//         }
+//     }
+// }
+
+// //TODO: check the allocatate person to gate function
+// void GateManager::allocatePersonToGate()
+// {
+//     // std::string gateId = findLeastBusyGate();
+//     // if (gateId != "")
+//     // {
+//     //     addPersonToGate(gateId);
+//     // }
+//     // Handle the case when no gate is available or all are busy
+// }
+
+// int GateManager::getLineCount(int id)
+// {
+//     auto it = gates.find(id);
+//     if (it != gates.end())
+//     {
+//         return it->second.getLineCount();
+//     }
+
+//     return -1;
+// }

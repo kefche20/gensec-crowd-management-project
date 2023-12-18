@@ -6,53 +6,73 @@
 #include <PubSubClient.h>
 #include <string>
 #include <Arduino.h>
+
 // libary
 #include "Messager.hpp"
+#include "MessageContent.hpp"
+
 #include "config.hpp"
 #include "Heartbeat.hpp"
 
 // interface
-#include "IRoler.hpp"
+#include "IDivListener.hpp"
+#include "INodeShifter.hpp"
+#include "IGuider.hpp"
 #include "ISender.hpp"
 
 #define ID_LENGTH 3
+#define MSG_LENGTH 1
+#define DATA_LENGTH 2
+
 #define SRC_ID_POS 1
 #define DES_ID_POS 5
+#define MSG_POS 9
+#define DATA_POS 11
+
 #define BOARDCAST_ID 000
 
 const int MQTT_PORT = 1883;
 
-enum ID_TYPE
+enum CONTENT_TYPE
 {
     SRC_ID = SRC_ID_POS,
-    DES_ID = DES_ID_POS
+    DES_ID = DES_ID_POS,
+    MSG = MSG_POS,
+    DATA = DATA_POS
 };
 
 /*
 //TODO
-    1. check leader beating when recieve leader beat
-    2. what happend if there are to notify to be the leader at the same time
-    3. message content to enumeration - protocol??
-    4. message response must be in message class or from divider where peform the check logic
+ 1. handle gateListener - change name to GateManager
+ 2. handle guider 
+ 3. verify message
+ 4. function for extract id
+ 5. function for chosing the topic
+
+//REVIEW - 
+1. check sum message
 */
 class Messager : public ISender
 {
 private:
-    IRoler *roler;
     PubSubClient *mqttClient;
-    hrtbt::Heartbeat *leaderAlive;
 
+    //
+    IDivListener *divListener;
+    INodeShifter *gateListener;
+    IGuider *guider;
 public:
-    Messager(WiFiClient *espClient, hrtbt::Heartbeat *leaderAlive) : roler(nullptr), leaderAlive(leaderAlive)
+    Messager(WiFiClient *espClient) : divListener(nullptr), gateListener(nullptr), guider(nullptr)
     {
         mqttClient = new PubSubClient(*espClient);
     }
 
-    Messager(PubSubClient *mqttClient, hrtbt::Heartbeat *leaderAlive) : mqttClient(mqttClient), roler(nullptr), leaderAlive(leaderAlive)
+    Messager(PubSubClient *mqttClient) : divListener(nullptr), gateListener(nullptr), guider(nullptr)
     {
     }
 
-    int SetRoler(IRoler *roler);
+    int SetListener(IDivListener *divListener, INodeShifter *gateListener, IGuider *guider);
+
 
     int SetupMQTT(const char *broker, const int port, void (*callback)(char *, uint8_t *, unsigned int));
 
@@ -63,11 +83,13 @@ public:
 
     void MqttLoop();
     // perform logic of dealing with message
-    void ReadMessage(std::string msg);
+    void ReadDividerMessage(std::string msg);
+  
+      void ReadGateMessage(std::string msg);
 
     // send message to a specific id in the network
     // TODO - make function/method for selecting topic
-    int SendMessage(Node_t nodeType, int srcId, int destId, std::string content) const override
+    int SendMessage(Node_t nodeType, int srcId, int destId, int content) const override
     {
         const char *topic = "";
 
@@ -83,14 +105,14 @@ public:
         }
 
         char data[200];
-        sprintf(data, "&%s-%s-%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), content.c_str());
+        sprintf(data, "&%s-%s-%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str());
         mqttClient->publish(topic, data);
 
         return 1;
     }
 
     // send message to all members
-    int SendMessage(Node_t nodeType, int srcId, std::string content) const override
+    int SendMessage(Node_t nodeType, int srcId, int content) const override
     {
         const char *topic = "";
 
@@ -102,13 +124,13 @@ public:
             break;
         case GATE:
             topic = topic = topic_gates;
-            
+
             break;
         }
 
         char data[200];
         // 000 to string problem?
-        sprintf(data, "&%s-%s-%s;", std::to_string(srcId).c_str(), "000", content.c_str());
+        sprintf(data, "&%s-%s-%s;", std::to_string(srcId).c_str(), "000", std::to_string(content).c_str());
         mqttClient->publish(topic, data);
 
         return 1;
@@ -136,14 +158,35 @@ public:
     }
 
 private:
-    void HandleBoardcastMessage(int srcId, std::string msg);
+    void HandleBoardcastMessage(int srcId, DividerBoardcastMessage msgCode);
 
-    void HandleDirectMessage(int srcId, std::string msg);
+    void HandleDirectMessage(int srcId, DividerDirectMessage msgCode);
+    
+    void HandleGateMessage(int srcId, GateMessage msgCode);
+
     // extract the id from the message
-    static std::string ExtractId(ID_TYPE type, std::string msg)
+    static std::string ExtractContent(CONTENT_TYPE type, std::string msg)
     {
-        int idPosition = type;
-        return msg.substr(idPosition, ID_LENGTH);
+        int contentPosition = type;
+        int readLength;
+        switch (type)
+        {
+        case MSG:
+            readLength = MSG_LENGTH;
+            break;
+        case DATA:
+            readLength = DATA_LENGTH;
+            break;
+        case SRC_ID: // TODO -  check again syntax correctness
+        case DES_ID:   
+            readLength = ID_LENGTH;
+            break;
+        default:
+            // fail detect conent type
+            break;
+        }
+
+        return msg.substr(contentPosition, readLength);
     }
 
     static bool IsMsgVaid(std::string msg)

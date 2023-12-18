@@ -1,21 +1,21 @@
-#include "DividerComns.hpp"
+#include "DividerManager.hpp"
 
 bool IsLeader(Divider divider)
 {
     return divider.GetLeader();
 }
 
-void DividerComns::SetSender(ISender *sender)
+void DividerManager::SetSender(ISender *sender)
 {
     this->sender = sender;
 }
 
-bool DividerComns::JustifyMember(int memberId)
+bool DividerManager::JustifyMember(int memberId)
 {
     return id != memberId;
 }
 
-bool DividerComns::JustifyLeader(int leaderId)
+bool DividerManager::JustifyLeader(int leaderId)
 {
     bool accept = true;
 
@@ -30,20 +30,13 @@ bool DividerComns::JustifyLeader(int leaderId)
     return accept;
 }
 
-void DividerComns::SetDividerRole(int id, bool isLeader)
+void DividerManager::SetDividerRole(int id, bool isLeader)
 {
     // find the divider with the corresponding id
     auto divider = std::find(dividers.begin(), dividers.end(), id);
 
     // check if divider's id is found
-    bool isFound = true;
-    if (divider == dividers.end())
-    {
-        isFound = false;
-    }
-
-    // set/add divider with role
-    if (isFound)
+    if (divider != dividers.end())
     {
         divider->SetLeader(isLeader);
     }
@@ -55,7 +48,7 @@ void DividerComns::SetDividerRole(int id, bool isLeader)
 }
 
 // TODO: check how lampda chan be used properly
-int DividerComns::IsNextLeader()
+int DividerManager::IsNextLeader()
 {
     bool isNextLeader = true;
 
@@ -78,7 +71,7 @@ int DividerComns::IsNextLeader()
 }
 
 // TODO: check optimizing  remove leader function
-void DividerComns::RemoveLeader()
+void DividerManager::RemoveLeader()
 {
     // find the divider with the corresponding id
     auto divider = std::find_if(dividers.begin(), dividers.end(), IsLeader);
@@ -91,7 +84,7 @@ void DividerComns::RemoveLeader()
     dividers.remove(*divider);
 }
 
-void DividerComns::RemoveDivider(int id)
+void DividerManager::RemoveDivider(int id)
 {
     // find the divider with the corresponding id
     auto divider = std::find(dividers.begin(), dividers.end(), id);
@@ -99,38 +92,56 @@ void DividerComns::RemoveDivider(int id)
     dividers.remove(*divider);
 }
 
-void DividerComns::dividersChat()
+void DividerManager::dividersChat()
 {
     switch (role.mode)
     {
     case IDLE:
         if (role.IsNewMode())
+        // send discover message
         {
-            sender->SendMessage(DIVIDER, id, "DISCOVER");
+            sender->SendMessage(DIVIDER, id, DISCOVER);
             timer.Reset();
             role.ClearEntryFlag();
         }
 
+        if (role.IsAssignedMember())
+        // if leader is already exist
+        {
+            role.UpdateMode(MEMBER);
+            role.SetAssignedMember(false);
+        }
+
         if (timer.isTimeOut())
+        // if leader is not exist
         {
             role.UpdateMode(NEUTRAL);
         }
         break;
     case NEUTRAL:
         if (role.IsNewMode())
+        // check if become the next leader
         {
             if (IsNextLeader())
             {
-                sender->SendMessage(DIVIDER, id, "NEW_LEADER");
+                sender->SendMessage(DIVIDER, id, NEW_LEADER);
                 role.UpdateMode(LEADER);
             }
             role.ClearEntryFlag();
         }
 
+        if (role.IsAssignedMember())
+        // if other is assigned as leader already
+        {
+            role.UpdateMode(MEMBER);
+            sender->SendMessage(DIVIDER, id, Role::RoleToInt(role.mode)); // double check? make sure other know it as member.
+            role.SetAssignedMember(false);
+        }
         break;
 
     case MEMBER:
         if (role.IsNewMode())
+        // start to keep track on the leader hearbeat
         {
             leaderAlive->RefreshLastBeat();
             role.ClearEntryFlag();
@@ -139,26 +150,32 @@ void DividerComns::dividersChat()
         if (leaderAlive->TrackingAlive() == hrtbt::status::DEAD)
         {
             RemoveLeader();
-            sender->SendMessage(DIVIDER, id, "LEADER_DEAD");
+            sender->SendMessage(DIVIDER, id, LEADER_DEAD);
             role.UpdateMode(NEUTRAL);
         }
 
         break;
     case LEADER:
         if (role.IsNewMode())
+        // begin the heart beat timer
         {
-
             timer.Reset();
             timer.SetInterval(leaderAlive->GetBeatRate());
             role.ClearEntryFlag();
         }
 
         if (timer.isTimeOut())
-        // leader'heart beats for a beatrate duration
+        // leader sent heartbeat for the interval period
         {
-
-            sender->SendMessage(DIVIDER, id, "LEADER_ALIVE");
+            sender->SendMessage(DIVIDER, id, LEADER_ALIVE);
             timer.Reset();
+        }
+
+        if (role.IsAssignedMember())
+        //if other higher priority leader tell you to fuck off
+        {
+            role.UpdateMode(MEMBER);
+            role.SetAssignedMember(false);
         }
         break;
     default:

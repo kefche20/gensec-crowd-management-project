@@ -6,36 +6,40 @@
 class Gate
 {
 private:
-    std::string id;
+    int id;
     bool isOpen;
+    int maxCapacity;
     int peopleCount;
 
 public:
     // Constructor
-    Gate(std::string id);
+    Gate(int id);
 
-    // Get the ID of the gate
-    std::string getId();
+    // comparing gate via id value
+    bool operator==(int id);
 
-    // Open the gate
-    void open();
-
-    // Close the gate
-    void close();
+    bool operator==(const Gate& gate);
+ 
+    //get the id of the gate
+    int GetId();
 
     // Check if the gate is open
-    bool isOpened();
+    bool GetOpenSta();
+
+    // get max queue space
+    int GetMaxCapacity();
+
+    // Open/close gate
+    void SetOpenSta(bool sta);
 
     // Add a person to the gate
-    void addPerson();
+    void addPerson(int numOfPeople);
 
     // Update the number of people in line
     void refreshCount(int count);
 
     // Get the number of people in line at the gate
     int getLineCount();
-
-    // Other functionalities as needed
 };
 
 #endif // GATE_H
