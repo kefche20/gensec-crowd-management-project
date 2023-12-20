@@ -79,6 +79,22 @@ void callback(char *topic, uint8_t *payload, unsigned int length)
   
   *(payload + length) = '\0';
   std::string msg = (char *)payload;
+
+  //TODO: check create new topic gate with id 
+  //seperate read message through topic 
+  if(topic == topic_dividers)
+  {
+       //read gate divider message
+  }
+  else if(topic == topic_gates)
+  {
+      //read the gate message
+  }
+  else if(topic == topic_UI)
+  {
+    //read message form the ui
+  }
+
  // messager.ReadMessage(msg);
 
   Serial.print("\n\n");

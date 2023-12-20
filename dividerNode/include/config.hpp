@@ -7,6 +7,8 @@ static const int MAX_GATES = 3;
 // TODO: find a solution to store the topics temporary
 static const char *topic_gates = "airportDemo";
 static const char *topic_dividers = "airportDemoDividers";
+static const char *topic_UI = "airportDemoUI";
+
 
 // MQTT Broker variables
 static const char *mqtt_broker = "broker.hivemq.com";

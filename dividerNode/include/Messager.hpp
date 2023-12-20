@@ -16,7 +16,7 @@
 
 // interface
 #include "IDivListener.hpp"
-#include "INodeShifter.hpp"
+#include "IGateListener.hpp"
 #include "IGuider.hpp"
 #include "ISender.hpp"
 
@@ -43,14 +43,18 @@ enum CONTENT_TYPE
 
 /*
 //TODO
+
  1. handle gateListener - change name to GateManager
- 2. handle guider 
+ 2. handle guider
  3. verify message
  4. function for extract id
  5. function for chosing the topic
 
-//REVIEW - 
+
+
+//REVIEW -
 1. check sum message
+2. check extract data - estimate len of people not going to exceed 99 per line
 */
 class Messager : public ISender
 {
@@ -59,8 +63,9 @@ private:
 
     //
     IDivListener *divListener;
-    INodeShifter *gateListener;
+    IGateListener *gateListener;
     IGuider *guider;
+
 public:
     Messager(WiFiClient *espClient) : divListener(nullptr), gateListener(nullptr), guider(nullptr)
     {
@@ -71,8 +76,7 @@ public:
     {
     }
 
-    int SetListener(IDivListener *divListener, INodeShifter *gateListener, IGuider *guider);
-
+    int SetListener(IDivListener *divListener, IGateListener *gateListener, IGuider *guider);
 
     int SetupMQTT(const char *broker, const int port, void (*callback)(char *, uint8_t *, unsigned int));
 
@@ -84,8 +88,10 @@ public:
     void MqttLoop();
     // perform logic of dealing with message
     void ReadDividerMessage(std::string msg);
-  
-      void ReadGateMessage(std::string msg);
+
+    void ReadGateMessage(std::string msg);
+
+    void ReadUIMessage(std::string msg);
 
     // send message to a specific id in the network
     // TODO - make function/method for selecting topic
@@ -161,10 +167,13 @@ private:
     void HandleBoardcastMessage(int srcId, DividerBoardcastMessage msgCode);
 
     void HandleDirectMessage(int srcId, DividerDirectMessage msgCode);
-    
-    void HandleGateMessage(int srcId, GateMessage msgCode);
+
+    void HandleGateMessage(int srcId, GateMessage msgCode, int data);
+
+    void HandleUIMessage(UIMessage msgCode, int data);
 
     // extract the id from the message
+    // TODO:
     static std::string ExtractContent(CONTENT_TYPE type, std::string msg)
     {
         int contentPosition = type;
@@ -177,8 +186,8 @@ private:
         case DATA:
             readLength = DATA_LENGTH;
             break;
-        case SRC_ID: // TODO -  check again syntax correctness
-        case DES_ID:   
+        case SRC_ID:
+        case DES_ID:
             readLength = ID_LENGTH;
             break;
         default:

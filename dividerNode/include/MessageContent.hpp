@@ -21,14 +21,20 @@ enum GateMessage
 {
    OPENGATE,
    CLOSEGATE,
-   NUMOFPEOPLE,
+   NUMOFPEOPLE, //REVIEW - chaning message name from NUMOFPEOPLE to DATA
    EMERGENCY,
    ALLOC,
    REGISTER,
    SCANNED
-  
+
 };
 
+
+enum UIMessage
+{
+   CHECK_IN,
+
+};
 
 
 #endif 

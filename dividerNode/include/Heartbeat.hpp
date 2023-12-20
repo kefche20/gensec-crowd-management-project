@@ -14,6 +14,12 @@
 
 // #include <iostream>
 
+/*
+//TODO:
+ transit implement code to
+
+*/
+
 namespace hrtbt
 {
 
@@ -76,9 +82,8 @@ namespace hrtbt
   {
   private:
     int stackDepth;
-    QueueHandle_t nodeBeats; // stored the id of node beats
-
     INodeShifter *nodeShifter;
+    QueueHandle_t nodeBeats; // stored the id of node beats
 
   public:
     MetaTracker(int lenOfBeats, INodeShifter *nodeShifter) : nodeShifter(nodeShifter)
@@ -93,14 +98,19 @@ namespace hrtbt
       taskName += std::to_string(id);
 
       // create new tracker for new node
-      NodeAliveTracker *nodeAliveTracker = new NodeAliveTracker(id, new Heartbeat(DEFAULT_RATE, DEFAULT_OFFSET), nodeBeats,nodeShifter);
+      NodeAliveTracker *nodeAliveTracker = new NodeAliveTracker(id, new Heartbeat(DEFAULT_RATE, DEFAULT_OFFSET), nodeBeats, nodeShifter);
 
       // create task to keep track on node alive
       xTaskCreate(MetaTracker::TrackingHeartAlive, taskName.c_str(), stackDepth, nodeAliveTracker, 1, nullptr);
     }
 
-    void AddGateBeat();
+    void AddGateBeat(int id)
+    {
+      //store beats to be wait unting being read 
+      xQueueSend(nodeBeats, &id, 100);
+    }
 
+  private:
     static void TrackingHeartAlive(void *pvParameter)
     {
       // convert back to tracker
@@ -131,7 +141,7 @@ namespace hrtbt
 
         case END_TRACK:
         {
-          //remove node from the manager
+          // remove node from the manager
           tracker->nodeShifter->RemoveNode(tracker->id);
           vTaskDelete(NULL);
         }

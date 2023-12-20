@@ -1,6 +1,6 @@
 #include "Messager.hpp"
 
-int Messager::SetListener(IDivListener *divListener, INodeShifter *gateListener, IGuider *guider)
+int Messager::SetListener(IDivListener *divListener, IGateListener *gateListener, IGuider *guider)
 {
     if (divListener == nullptr)
     {
@@ -153,6 +153,7 @@ void Messager::HandleDirectMessage(int srcId, DividerDirectMessage msgCode)
 
 void Messager::ReadGateMessage(std::string msg)
 {
+    // REVIEW - might need a specify check valid for the gate message
     if (!IsMsgVaid(msg))
     {
         return;
@@ -164,17 +165,17 @@ void Messager::ReadGateMessage(std::string msg)
     int msgCode = -1;
     int data = -1;
 
+    // extra meaningful contents from the payload
     srcId = std::stoi(ExtractContent(SRC_ID, msg));
     desId = std::stoi(ExtractContent(DES_ID, msg));
     msgCode = std::stoi(ExtractContent(MSG, msg));
-    msgCode = std::stoi(ExtractContent(DATA, msg));
+    data = std::stoi(ExtractContent(DATA, msg));
 
     // join network - make friend - optimize this code
     // FIXME: change the check id from the customer guider
-
     if (desId == divListener->GetId())
     {
-        HandleGateMessage(srcId, (GateMessage)msgCode);
+        HandleGateMessage(srcId, (GateMessage)msgCode, data);
     }
     else
     {
@@ -182,18 +183,55 @@ void Messager::ReadGateMessage(std::string msg)
     }
 }
 
-void Messager::HandleGateMessage(int srcId, GateMessage msgCode)
+void Messager::HandleGateMessage(int srcId, GateMessage msgCode, int data)
 {
-   
-switch(msgCode)
-{
-case REGISTER:
-gateListener->AddNode(srcId);
-break;
-default:
-break;
 
+    switch (msgCode)
+    {
+    case REGISTER:
+        gateListener->HandleGateRegister(srcId);
+        break;
+    case NUMOFPEOPLE:
+        gateListener->HandleGateDataBeats(srcId, data);
+    default:
+        break;
+    }
 }
- 
 
+void Messager::ReadUIMessage(std::string msg)
+{
+    // REVIEW - might need a specific check valid for the UI messsage
+    if (!IsMsgVaid(msg))
+    {
+        return;
+    }
+
+    // recieved id - UI won't need specific src id 
+    int desId = -1;
+    int msgCode = -1;
+    int data = -1;
+
+    // extra meaningful contents from the payload
+    desId = std::stoi(ExtractContent(DES_ID, msg));
+    msgCode = std::stoi(ExtractContent(MSG, msg));
+    data = std::stoi(ExtractContent(DATA, msg));
+
+   //FIXME - get the id from the customer guider 
+    if(desId != divListener->GetId())
+    {
+        HandleUIMessage((UIMessage)msgCode,data);
+    }
+}
+
+void Messager::HandleUIMessage(UIMessage msgCode, int data)
+{
+
+    switch (msgCode)
+    {
+    case CHECK_IN:
+        guider->HandleCustomerCheckIn(data);
+        break;
+    default:
+        break;
+    }
 }

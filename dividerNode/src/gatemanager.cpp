@@ -1,8 +1,11 @@
 #include "GateManager.hpp"
+#include "MessageContent.hpp"
 
-GateManager::GateManager(int maxGateNum, int openThreshold, int closeThreshold) : maxGateNum(maxGateNum), openThreshold(openThreshold), closeThreshold(closeThreshold), generalState(ALL_FREE)
+GateManager::GateManager(int maxGateNum, int openThreshold, int closeThreshold, ISender *sender) : maxGateNum(maxGateNum), openThreshold(openThreshold), closeThreshold(closeThreshold), generalState(ALL_FREE), sender(sender), id(100)
 {
+    gateMetaTracker = new hrtbt::MetaTracker(10, this);
 }
+
 void GateManager::SetGateState(int gateId, bool sta)
 {
     auto gate = std::find(gates.begin(), gates.end(), gateId);
@@ -31,19 +34,6 @@ void GateManager::addPersonToGate(int gateId, int numOfPeople)
     }
 }
 
-// TODO: check purpose of this function
-//  void GateManager::refreshNumOfPeopleInGate(int id, int numOfPeople)
-//  {
-//      // if (gates.find(id) != gates.end())
-//      // {
-//      //     gates[id].refreshCount(numOfPeople);
-//      // }
-//      // else
-//      // {
-//      //     // Handle case of non-existing gate
-//      // }
-//  }
-
 // TODO: check the allocatate person to gate function
 void GateManager::allocatePersonToGate()
 {
@@ -54,7 +44,6 @@ void GateManager::allocatePersonToGate()
     // }
     // Handle the case when no gate is available or all are busy
 }
-
 
 /*
   - Gate send heartbeat gonna be stored in the queue  id store
@@ -120,8 +109,7 @@ void GateManager::GateOpenCloseLogic()
         // open more gate
         if (openGateId != -1)
         {
-            // notify the customer guider
-            // send the msg to close gate
+            sender->SendMessage(GATE, this->id, openGateId, OPENGATE);
         }
         else
         {
@@ -146,8 +134,7 @@ void GateManager::GateOpenCloseLogic()
         if (GetActiveGate() > 1)
         {
             int closeGateId = closeAnIdleGate();
-            // notify the customer guider
-            // send the msg to close gate
+            sender->SendMessage(GATE,this->id,closeGateId,CLOSEGATE);
         }
         else
         {
@@ -162,7 +149,7 @@ void GateManager::GateOpenCloseLogic()
         break;
 
     default:
-        // handle invalid case
+
         break;
     }
 }
@@ -213,7 +200,6 @@ int GateManager::openAnIdleGate()
     return openGateId;
 }
 
-// TODO: check purpose of this function
 int GateManager::closeAnIdleGate()
 {
     int closeGateId = -1;
