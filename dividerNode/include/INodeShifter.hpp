@@ -2,7 +2,7 @@
 #define INODESHIFTER_HPP
 
 // TODO: give a better name for this interface
-class INodeShifter
+class INodeManager
 {
 public:
     virtual void AddNode(int id) = 0;

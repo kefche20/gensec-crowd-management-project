@@ -63,9 +63,9 @@ namespace hrtbt
     QueueHandle_t nodeBeats;
 
     TrackState state;
-    INodeShifter *nodeShifter;
+    INodeManager *nodeShifter;
 
-    NodeAliveTracker(int id, Heartbeat *heartbeat, QueueHandle_t nodeBeats, INodeShifter *nodeShifter) : id(id), heartbeat(heartbeat), nodeBeats(nodeBeats), state(READ_ID), beatRecord(-1), nodeShifter(nodeShifter) {}
+    NodeAliveTracker(int id, Heartbeat *heartbeat, QueueHandle_t nodeBeats, INodeManager *nodeShifter) : id(id), heartbeat(heartbeat), nodeBeats(nodeBeats), state(READ_ID), beatRecord(-1), nodeShifter(nodeShifter) {}
 
     bool IsRightBeat()
     {
@@ -82,11 +82,11 @@ namespace hrtbt
   {
   private:
     int stackDepth;
-    INodeShifter *nodeShifter;
+    INodeManager *nodeShifter;
     QueueHandle_t nodeBeats; // stored the id of node beats
 
   public:
-    MetaTracker(int lenOfBeats, INodeShifter *nodeShifter) : nodeShifter(nodeShifter)
+    MetaTracker(int lenOfBeats, INodeManager *nodeShifter) : nodeShifter(nodeShifter)
     {
       nodeBeats = xQueueCreate(lenOfBeats, sizeof(int));
     }

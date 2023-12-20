@@ -2,7 +2,7 @@
 #define CUSTOMERGUIDER_HPP
 
 #include <iostream>
-#include <>
+#include <utility>  
 
 #include "IGuider.hpp"
 
@@ -20,13 +20,14 @@ enum GuidingState
 
 };
 
+//TODO - implement "pair" logic to hold <int id, int numOfPeople>
 struct Guiding
 {
     GuidingState guidingState;
     Gate appointedGate;
     bool isCheckIn;
 
-    Guiding() : guidingState(IDLE_G). ap
+    Guiding() : guidingState(IDLE_G), appointedGate
     {
     }
 };

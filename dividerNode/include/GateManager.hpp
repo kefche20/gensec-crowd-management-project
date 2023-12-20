@@ -75,7 +75,7 @@ public:
   2. what the fuck meaning for storing information at two place
 */
 
-class GateManager : public IGateListener, public INodeShifter
+class GateManager : public IGateListener, public INodeManager
 {
 private:
   int id; //temporary test - id should be in the customer guider 
