@@ -24,10 +24,10 @@ enum GuidingState
 struct Guiding
 {
     GuidingState guidingState;
-    Gate appointedGate;
+  //  Gate appointedGate;
     bool isCheckIn;
 
-    Guiding() : guidingState(IDLE_G), appointedGate
+    Guiding() //: guidingState(IDLE_G), appointedGate
     {
     }
 };
