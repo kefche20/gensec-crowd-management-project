@@ -1,22 +1,35 @@
-#ifndef DIVIDERCOMMS_HPP
-#define DIVIDERCOMMS_HPP
+#ifndef DIVIDERMANAGER_HPP
+#define DIVIDERMANAGER_HPP
 #include <list>
 #include <algorithm>
 
-#include "Divider.hpp"
+#include "MessageContent.hpp"
 
 #include "Heartbeat.hpp"
 #include "Timer.hpp"
+#include "Divider.hpp"
 
-#include "IRoler.hpp"
+#include "IDivListener.hpp"
 #include "ISender.hpp"
 
 struct Role
 {
     RoleMode mode;
     RoleMode preMode;
-    Role() : mode(IDLE), preMode(VOID)
+    bool isAssignedMember;
+
+    Role() : mode(IDLE), preMode(VOID), isAssignedMember(false)
     {
+    }
+
+    void SetAssignedMember(bool sta)
+    {
+        isAssignedMember = sta;
+    }
+
+    bool IsAssignedMember()
+    {
+        return isAssignedMember;
     }
 
     bool IsNewMode()
@@ -34,28 +47,27 @@ struct Role
         preMode = mode;
     }
 
-    static std::string RoleToString(RoleMode role)
+    static int RoleToInt(RoleMode role)
     {
         switch (role)
         {
         case LEADER:
-            return "FELLOW_LEADER";
+            return FELLOW_LEADER;
             break;
         case MEMBER:
-            return "FELLOW_MEMBER";
+            return FELLOW_MEMBER;
             break;
         default:
-            return "FELLOW_NETRUAL";
+            return FELLOW_MEMBER;
         }
     }
 };
 
 /*
-// TODO
-    1. check if search function working
-    2. fix bug member autorest to NEUTRAL - //check again
+    1. remove the divider when one is dead
+    2.
 */
-class DividerComns : IRoler
+class DividerManager : IDivListener
 {
 private:
     int id;
@@ -68,7 +80,7 @@ private:
     std::list<Divider> dividers;
 
 public:
-    DividerComns(int id, hrtbt::Heartbeat *leaderAlive) : id(id), leaderAlive(leaderAlive), sender(nullptr)
+    DividerManager(int id, hrtbt::Heartbeat *leaderAlive) : id(id), leaderAlive(leaderAlive), sender(nullptr)
     {
         timer.SetInterval(WAIT_INTERVAL);
     }
@@ -84,18 +96,17 @@ public:
     {
         return id;
     }
-
     // handle message: DISCOVER
     void HandleNewDivider(int newDividerId) override
     {
         if (JustifyMember(newDividerId))
         {
-            SetDividerRole(newDividerId, false);                                           // record new member with id & role
-            sender->SendMessage(DIVIDER, id, newDividerId, Role::RoleToString(role.mode)); // introduce its role to new members
+            SetDividerRole(newDividerId, false);                                        // record new member with id & role
+            sender->SendMessage(DIVIDER, id, newDividerId, Role::RoleToInt(role.mode)); // introduce its role to new members
         }
         else
         {
-            sender->SendMessage(DIVIDER, id, "DISQUALIFY"); // introduce its role to new members
+            //  sender->SendMessage(DIVIDER, id, "DISQUALIFY");
         }
     }
 
@@ -112,14 +123,13 @@ public:
             if (JustifyLeader(dividerId))
             // accept new leader & become member!
             {
-                SetDividerRole(dividerId, false);
-                role.UpdateMode(MEMBER);
-                sender->SendMessage(DIVIDER, id, Role::RoleToString(role.mode)); // double check? make sure other know it as member.
+                SetDividerRole(dividerId, true);
+                role.SetAssignedMember(true);
             }
             else
             // no! get back to be a member!
             {
-                sender->SendMessage(DIVIDER, id, dividerId, Role::RoleToString(role.mode));
+                sender->SendMessage(DIVIDER, id, dividerId, Role::RoleToInt(role.mode));
             }
             break;
         }
@@ -134,8 +144,8 @@ public:
             leaderAlive->RefreshLastBeat();
             break;
         case hrtbt::DEAD:
-            RemoveDivider(leaderId);
-            role.UpdateMode(NEUTRAL);
+            //  RemoveDivider(leaderId);
+            //  role.UpdateMode(NEUTRAL);
             break;
         }
     }
@@ -152,8 +162,7 @@ public:
         case LEADER:
 
             SetDividerRole(dividerId, true);
-            role.UpdateMode(MEMBER);
-
+            role.SetAssignedMember(true);
             break;
         }
     }
@@ -167,6 +176,8 @@ private:
     void SetDividerRole(int id, bool isLeader);
 
     void RemoveDivider(int id);
+
+    void RemoveLeader();
 
     int IsNextLeader();
 };

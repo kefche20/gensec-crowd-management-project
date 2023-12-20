@@ -15,7 +15,7 @@ enum Node_t
 class ISender
 {
 public:
-    virtual  int SendMessage(Node_t nodeType, int SrcId, int destId, std::string content) const = 0;
-    virtual  int SendMessage(Node_t nodeType, int SrcId, std::string content) const = 0;
+    virtual  int SendMessage(Node_t nodeType, int SrcId, int destId, int content) const = 0;
+    virtual  int SendMessage(Node_t nodeType, int SrcId, int content) const = 0;
 };
 #endif

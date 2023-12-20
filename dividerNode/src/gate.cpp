@@ -1,36 +1,47 @@
-#include "gate.h"
-Gate::Gate(std::string id) : id(std::move(id)), isOpen(false), peopleCount(0)
+#include "Gate.hpp"
+Gate::Gate(int id) : id(id), isOpen(false), peopleCount(0)
 {
-  
 }
-std::string Gate::getId()
+
+bool Gate::operator==(int id)
+{
+  return this->id == id;
+}
+
+bool Gate::operator==(const Gate& gate)
+{
+  return this->id == gate.id;
+}
+
+int Gate::GetId()
 {
   return id;
 }
 
-void Gate::open()
-{
-  isOpen = true;
-}
-
-void Gate::close()
-{
-  isOpen = false;
-}
-
-bool Gate::isOpened()
+bool Gate::GetOpenSta()
 {
   return isOpen;
 }
 
-void Gate::addPerson()
+int Gate::GetMaxCapacity()
+{
+  return maxCapacity;
+}
+
+void Gate::SetOpenSta(bool sta)
+{
+  isOpen = sta;
+}
+
+void Gate::addPerson(int numOfPeople)
 {
   if (isOpen)
   {
-    ++peopleCount;
+    peopleCount += numOfPeople;
   }
-  // TODO:: Handle case when gate is closed
-  // TODO:: Handle case when gate is at maximum
+
+  // TODO Handle case when gate is closed
+  // TODO Handle case when gate is at maximum
 }
 
 void Gate::refreshCount(int count)

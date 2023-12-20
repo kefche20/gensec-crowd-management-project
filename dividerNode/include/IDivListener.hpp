@@ -1,5 +1,5 @@
-#ifndef IROLER_HPP
-#define IROLER_HPP
+#ifndef IDIVLISTENER_HPP
+#define IDIVLISTENER_HPP
 
 #include <iostream>
 #include <Heartbeat.hpp>
@@ -13,7 +13,7 @@ enum RoleMode
     MEMBER
 };
 
-class IRoler
+class IDivListener
 {
 public:
     
