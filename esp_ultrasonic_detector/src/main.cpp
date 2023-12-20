@@ -6,7 +6,7 @@
 #define ECHO_PIN_1 15
 #define ECHO_PIN_2 14
 
-#define CATCH_DISTANCE 50
+#define CATCH_DISTANCE 10
 #define MAX_DETECT_DELAY 50
 
 typedef enum
