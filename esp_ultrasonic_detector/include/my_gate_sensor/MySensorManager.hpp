@@ -1,7 +1,7 @@
 #ifndef MY_SENSOR_MANAGER_HPP
 #define MY_SENSOR_MANAGER_HPP
 
-#include "entryDetector.hpp"
+#include "..\include\entryDetector.hpp"
 
 
 

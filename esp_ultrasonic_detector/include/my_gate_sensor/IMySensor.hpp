@@ -1,7 +1,7 @@
 #ifndef I_MY_SENSOR_HPP
 #define I_MY_SENSOR_HPP
 
-#include "entryDetector.hpp"
+#include "..\include\entryDetector.hpp"
 
 class IMySensor
 {

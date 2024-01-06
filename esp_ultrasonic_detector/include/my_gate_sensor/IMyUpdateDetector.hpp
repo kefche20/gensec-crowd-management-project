@@ -1,7 +1,7 @@
 #ifndef I_MY_UPDATE_DETECTOR_HPP
 #define I_MY_UPDATE_DETECTOR_HPP
 
-#include "entryDetector.hpp"
+#include "..\include\entryDetector.hpp"
 
 class IMyUpdateDetector
 {

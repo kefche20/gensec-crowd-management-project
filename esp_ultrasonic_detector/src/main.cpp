@@ -65,6 +65,10 @@ void loop()
 
   if (current_time - start_time >= MAX_DETECT_DELAY)
   {
+    // Serial.print("first sensor: ");
+    // Serial.println(first_catch_val);
+    // Serial.print("second sensor: ");
+    // Serial.println(second_catch_val);
     switch (sensor_state)
     {
     case WAITING:
