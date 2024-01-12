@@ -1,11 +1,8 @@
-#ifndef SENSOR_STATES_ENUM
-#define SENSOR_STATES_ENUM
+#pragma once
 
 enum class SensorState
 {
     WAITING = 0,
     DETECTING = 1,
-    ADDING = 2
+    CALCULATING = 2
 };
-
-#endif

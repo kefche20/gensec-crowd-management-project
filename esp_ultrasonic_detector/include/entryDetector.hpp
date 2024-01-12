@@ -1,5 +1,4 @@
-#ifndef ENTRY_DETECTOR_HPP 
-#define ENTRY_DETECTOR_HPP
+#pragma once
 
 #define TRIGGER_PIN_1 2
 #define TRIGGER_PIN_2 12
@@ -7,13 +6,22 @@
 #define ECHO_PIN_1 15
 #define ECHO_PIN_2 14
 
+//sensor constance
 #define CATCH_DISTANCE 50
 #define MAX_DETECT_DELAY 50
 
+#define MY_PULSE_TIMEOUT 23529.4
+#define MY_DISTANCE_DIVIDER 58.8235
+
+//queue constance
+#define MAX_QUEUE_NUMBER 10
+
+//WiFi constance
 #define MY_NET_SSID "R@mzy"
 #define NY_NET_PASSWORD "yzmar252887!"
 #define NY_NET_PORT 1883
 
+//MQTT constance
 #define MY_MQTT_BROKER "broker.hivemq.com"
 #define MY_MQTT_USERNAME "Nedyalko"
 #define MY_MQTT_PASSWORD "1234"
@@ -38,5 +46,3 @@
 #include <Arduino.h>
 #include "..\include\my_gate_sensor\statesOfSensor.hpp"
 #include "..\include\my_gate_sensor\statesOfMovement.hpp"
-
-#endif // MACRO
