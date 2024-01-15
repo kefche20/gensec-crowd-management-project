@@ -5,9 +5,8 @@
 
 class IRemoteCollector
 {
-    virtual std::map< int, int> GetLeastBusyGates() = 0;
+public:
+    virtual std::map<int, int> GetLeastBusyGates() = 0;
 };
 
-
 #endif
-

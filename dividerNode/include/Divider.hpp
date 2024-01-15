@@ -2,14 +2,14 @@
 #define DIVIDER_HPP
 
 #include <iostream>
-
+#include <utility>
+#include "Heartbeat.hpp"
+#include "DividerDataProcessor.hpp"
 
 
 // TODO
 /*
-1. when to overload operator ()/operator ==
-2. std::find() and std::find_if() using x to find or find the x?? are the y same?
-3. define of timer nterval ???
+
 */
 
 #define WAIT_INTERVAL 5000
@@ -17,41 +17,38 @@
 class Divider
 {
 private:
+    //basic info
     int id;
     bool isLeader;
 
+    //data
+    std::pair<int,int> leastBusyGate; //first is id, second is the rate value  
+
 public:
-    Divider(int id, bool isLeader) : id(id), isLeader(isLeader)
-    {
-    }
+    Divider(int id, bool isLeader);
 
-    int GetId()
-    {
-        return id;
-    }
+    ~Divider();
+
+    int GetId();
+
     // overload operator ==
-    bool operator==(int id)
-    {
-        return this->id == id;
-    }
+    bool operator==(int id);
 
-    bool operator==(const Divider &divider)
-    {
-        return this->id == divider.id;
-    }
+    bool operator==(const Divider &divider);
 
     // get the role sta if leader
-    bool GetLeader()
-    {
-        return isLeader;
-    }
+    bool IsLeader();
 
     // set the role sta
-    void SetLeader(bool sta)
-    {
-        isLeader = sta;
-    }
+    void SetLeader(RoleMode role);
+
+    public: 
+
+    
 };
+
+
+
 
 
 #endif

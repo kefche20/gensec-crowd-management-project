@@ -20,3 +20,11 @@ uint8_t Timer::isTimeOut()
 
     return isTimeOut;
 }
+
+uint32_t Timer::GetThreadTime()
+{
+    TickType_t tick = xTaskGetTickCount();
+    TickType_t tickRate = portTICK_RATE_MS;
+
+    return tick * tickRate;
+}

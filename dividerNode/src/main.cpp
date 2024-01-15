@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "config.hpp" // Contains WiFi passwords and other configs
 // Classes
-//#include "gatemanager.h"
+// #include "gatemanager.h"
 
 #include "DividerManager.hpp"
 #include "GateManager.hpp"
@@ -22,45 +22,40 @@
 #define TOPIC_GATES 0
 #define TOPIC_DIVIDERS 1
 
-
-
-
 WiFiClient espClient;
+// PubSubClient *mqttClient = new PubSubClient(espClient);
 
-hrtbt::Heartbeat leaderAlive(BEATRATE,MAXOFFSET);
+hrtbt::Heartbeat leaderAlive(BEATRATE, MAXOFFSET);
 
 Messager messager(&espClient);
-DividerManager dividerManager(DIVIDER_ID,&leaderAlive);
-
-
+// DividerManager dividerManager(DIVIDER_ID);
 
 void callback(char *topic, uint8_t *payload, unsigned int length);
-
-
 
 void setup()
 {
   Serial.begin(9600);
-  
-  Serial.println("start setup!");
-//  messager.SetListener((IDivListener*)&dividerManager);   // TODO add listeners here 
-  dividerManager.SetSender((ISender*)&messager);
-    
-  //network connection
-  Messager::ConnectWiFi(&espClient);  
-   messager.SetupMQTT(mqtt_broker,mqtt_port,callback); 
-   messager.ConnectBroker();  
-   
-  //topic subscription
-  messager.ConnectTopic(topic_dividers);
-  messager.ConnectTopic(topic_gates);
+
+
+  //  messager.SetListener((IDivListener*)&dividerManager);   // TODO add listeners here
+  // dividerManager.SetSender((ISender*)&messager);
+
+  // //network connection
+   Messager::ConnectWiFi(&espClient);
+   messager.SetupMQTT(mqtt_broker,mqtt_port,callback);
+   messager.ConnectBroker();
+
+  // //topic subscription
+   messager.ConnectTopic(topic_dividers);
+   messager.ConnectTopic(topic_gates);
 }
 
 void loop()
 {
- dividerManager.dividersChat();
- 
- messager.MqttLoop();
+ //Serial.println("hahha");
+  //dividerManager.dividersChat();
+  // messager.MqttLoop();
+  //mqttClient->loop();
 }
 
 // handle the message coming from the networks
@@ -76,26 +71,27 @@ void callback(char *topic, uint8_t *payload, unsigned int length)
   {
     Serial.print((char)payload[i]);
   }
-  
+
   *(payload + length) = '\0';
   std::string msg = (char *)payload;
 
-  //TODO: check create new topic gate with id 
-  //seperate read message through topic 
-  if(topic == topic_dividers)
+  // TODO: check create new topic gate with id
+  // seperate read message through topic
+  if (topic == topic_dividers)
   {
-       //read gate divider message
+    // read gate divider message
+    //messager.ReadDividerMessage(msg);
+
   }
-  else if(topic == topic_gates)
+  else if (topic == topic_gates)
   {
-      //read the gate message
+    // read the gate message
   }
-  else if(topic == topic_UI)
+  else if (topic == topic_UI)
   {
-    //read message form the ui
+    // read message form the ui
   }
 
- // messager.ReadMessage(msg);
 
   Serial.print("\n\n");
 }

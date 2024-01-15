@@ -14,7 +14,7 @@
 #include "Gate.hpp"
 #include "heartbeat.hpp"
 #include "IGateListener.hpp"
-#include "INodeShifter.hpp"
+#include "INodeManager.hpp"
 
 #include "ISender.hpp"
 
@@ -78,7 +78,7 @@ public:
 class GateManager : public IGateListener, public INodeManager
 {
 private:
-  int id; //temporary test - id should be in the customer guider 
+  int id; // temporary test - id should be in the customer guider
   int maxGateNum;
 
   int openThreshold;  // Threshold to open a new gate
@@ -87,7 +87,7 @@ private:
 
   GeneralGatesState generalState;
   Traffic traffic; // keep track on close/open gate logic
-  hrtbt::MetaTracker *gateMetaTracker;
+  hrtbt::MetaAliveTracker *gateMetaTracker;
 
   ISender *sender;
 
@@ -97,12 +97,12 @@ public:
 
   // Add a new gate with the given ID
 
-  void AddNode(int id) override
+  bool Add(int id) override
   {
-    if (gates.size() >= maxGateNum)
+    if (gates.size() >= maxGateNum )
     {
       // TODO:: Throw error when too many gates are registered
-      return;
+      return false;
     }
 
     auto result = std::find(gates.begin(), gates.end(), id);
@@ -110,13 +110,14 @@ public:
     if (result != gates.end())
     {
       // throw id is already existed
-      return;
+      return false;
     }
 
     gates.push_back(Gate(id));
+    return true;
   }
 
-  void RemoveNode(int id) override
+  bool Remove(int id) override
   {
     auto gate = std::find(gates.begin(), gates.end(), id);
 
@@ -130,24 +131,26 @@ public:
   void HandleGateRegister(int id) override
   {
     // add new gate to list
-    AddNode(id);
+    Add(id);
     // creat alive tracker for the new gate
-    gateMetaTracker->AddGateHeart(id);
+    // FIXME - check add gate heart
+    // gateMetaTracker->AddGateHeart(id);
   }
 
   void HandleGateDataBeats(int gateId, int numOfPeople) override
   {
     auto gate = std::find(gates.begin(), gates.end(), gateId);
-     
+
     if (gate != gates.end())
-    //update the gat data and newest beats 
+    // update the gat data and newest beats
     {
-        gate->refreshCount(numOfPeople);
-        gateMetaTracker->AddGateBeat(gateId);
+      gate->refreshCount(numOfPeople);
+      // FIXME - check add gate heart
+      //    gateMetaTracker->AddGateBeat(gateId);
     }
     else
     {
-        //handle error of unfound id
+      // handle error of unfound id
     }
   }
 

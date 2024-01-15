@@ -2,11 +2,14 @@
 #define ILOCALCOLLECTOR_HPP
 
 #include "Gate.hpp"
-#include <list>
+
+#include <utility>
 
 class ILocalCollector
 {
-    virtual std::list<Gate> GetGateList() = 0;
+    public:
+    virtual std::pair<int,int> GetLeastBusyGate() = 0;   //return the information of gate id and number of people
+
 };
 
 #endif

@@ -3,7 +3,7 @@
 
 GateManager::GateManager(int maxGateNum, int openThreshold, int closeThreshold, ISender *sender) : maxGateNum(maxGateNum), openThreshold(openThreshold), closeThreshold(closeThreshold), generalState(ALL_FREE), sender(sender), id(100)
 {
-    gateMetaTracker = new hrtbt::MetaTracker(10, this);
+    gateMetaTracker = new hrtbt::MetaAliveTracker(10, this);
 }
 
 void GateManager::SetGateState(int gateId, bool sta)

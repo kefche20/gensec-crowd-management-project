@@ -107,25 +107,17 @@ void Messager::HandleBoardcastMessage(int srcId, DividerBoardcastMessage msgCode
     switch (msgCode)
     {
     case DISCOVER:
-        divListener->HandleNewDivider(srcId);
-
+        divListener->HandleNewMember(srcId);
         break;
+
     case NEW_LEADER:
-        divListener->HandleRoleChanging(srcId, LEADER);
-
+        divListener->HandleNewLeader(srcId);
         break;
-    case NEW_MEMBER:
-        divListener->HandleRoleChanging(srcId, MEMBER);
 
-        break;
     case LEADER_ALIVE:
-        divListener->HandleLeaderAlive(srcId, hrtbt::ALIVE);
-
+        divListener->HandleLeaderAlive(srcId);
         break;
-    case LEADER_DEAD:
-        divListener->HandleLeaderAlive(srcId, hrtbt::DEAD);
-
-        break;
+        
     default:
         // handle unvalid message
         break;
@@ -206,7 +198,7 @@ void Messager::ReadUIMessage(std::string msg)
         return;
     }
 
-    // recieved id - UI won't need specific src id 
+    // recieved id - UI won't need specific src id
     int desId = -1;
     int msgCode = -1;
     int data = -1;
@@ -216,10 +208,10 @@ void Messager::ReadUIMessage(std::string msg)
     msgCode = std::stoi(ExtractContent(MSG, msg));
     data = std::stoi(ExtractContent(DATA, msg));
 
-   //FIXME - get the id from the customer guider 
-    if(desId != divListener->GetId())
+    // FIXME - get the id from the customer guider
+    if (desId != divListener->GetId())
     {
-        HandleUIMessage((UIMessage)msgCode,data);
+        HandleUIMessage((UIMessage)msgCode, data);
     }
 }
 

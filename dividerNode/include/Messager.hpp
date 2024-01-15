@@ -15,7 +15,7 @@
 #include "Heartbeat.hpp"
 
 // interface
-#include "IDivListener.hpp"
+#include "DividerDataProcessor.hpp"
 #include "IGateListener.hpp"
 #include "IGuider.hpp"
 #include "ISender.hpp"
