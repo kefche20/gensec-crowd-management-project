@@ -42,9 +42,10 @@ public:
     // set the role sta
     void SetLeader(RoleMode role);
 
-    public: 
+    bool UpdateLeastBusyGate(std::pair<int, int> leastBusyGate);
 
-    
+     std::pair<int, int> GetGateData();
+
 };
 
 

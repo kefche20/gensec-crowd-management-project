@@ -28,7 +28,7 @@ WiFiClient espClient;
 hrtbt::Heartbeat leaderAlive(BEATRATE, MAXOFFSET);
 
 Messager messager(&espClient);
-// DividerManager dividerManager(DIVIDER_ID);
+ DividerManager dividerManager(DIVIDER_ID);
 
 void callback(char *topic, uint8_t *payload, unsigned int length);
 

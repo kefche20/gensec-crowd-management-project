@@ -105,46 +105,6 @@ namespace hrtbt
     
     //check and throw the beat id that is already deleted
     static void FilteringThrownIdTask(void *parameter);
-
-    //   static void TrackingHeartAlive(void *pvParameter)
-    //   {
-    //     // convert back to tracker
-    //     NodeAliveTracker *tracker = static_cast<NodeAliveTracker *>(pvParameter);
-
-    //     // task initialization
-
-    //     while (1)
-    //     {
-    //       switch (tracker->state)
-    //       {
-    //       case READ_ID:
-    //         // only read and remove the beat from the tracked id
-    //         if (xQueuePeek(tracker->nodeBeats, &tracker->beatRecord, 0) && tracker->IsRightBeat())
-    //         {
-    //           xQueueReceive(tracker->nodeBeats, &tracker->beatRecord, 0);
-    //           tracker->RefreshbeatRecord();
-
-    //           tracker->heartbeat->RefreshLastBeat();
-    //         }
-
-    //         tracker->heartbeat->RefreshLastBeat();
-
-    //         if (tracker->heartbeat->TrackingAlive() == DEAD)
-    //         {
-    //           tracker->state = END_TRACK;
-    //         }
-
-    //       case END_TRACK:
-    //       {
-    //         // remove node from the manager
-    //         tracker->nodeShifter->RemoveNode(tracker->id);
-    //         vTaskDelete(NULL);
-    //       }
-    //       }
-
-    //       vTaskDelay(10 / portTICK_PERIOD_MS);
-    //     }
-    //   }
   };
 }
 

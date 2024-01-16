@@ -36,10 +36,12 @@ public:
     void addPerson(int numOfPeople);
 
     // Update the number of people in line
-    void refreshCount(int count);
+    bool refreshCount(int count);
 
     // Get the number of people in line at the gate
     int getLineCount();
+
+    int GetBusyRate();
 };
 
 #endif // GATE_H

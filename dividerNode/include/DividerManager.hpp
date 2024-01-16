@@ -12,34 +12,41 @@
 #include "queue"
 
 #include "DividerDataProcessor.hpp"
-#include "ISender.hpp"
 
+#include "ISender.hpp"
+#include "IDataCollector.hpp"
 /*
     //REVIEW
-     1. member send heartbeat 
+     1. member send heartbeat
      2. leader store data
 
     0. check using exception for error proof
-    1. redesign to OOP programming style - inheritant 
+    1. redesign to OOP programming style - inheritant
 
 */
 
-class DividerManager : public IDivListener, public INodeManager
+class DividerManager : public IDivListener, public INodeManager, public IDataCollector
 {
 private:
     int id;
     RoleControl role;
     Timer timer;
 
-    ISender *sender;
     std::list<Divider> dividers;
-
     hrtbt::MetaAliveTracker metaAliveTracker;
+
+    // interface with messager and
+    ISender *sender;
+    IDataCollector *localCollector;
 
 public:
     DividerManager(int id);
 
-    void SetSender(ISender *sender);
+    bool SetSender(ISender *sender);
+
+    bool SetLocalCollector(IDataCollector *locaCollector);
+
+    std::pair<int, int> GetLeastBusyGate() override;
 
     int GetId() override;
 
@@ -53,14 +60,14 @@ public:
     // divider response
 
     // TOPIC: Roles
+    // handle message: FELLOW_MEMBER + FELLOW_LEADER
+    void HandleDiscoverResult(int dividerId, RoleMode dividerRole) override;
+
     //  handle message: DISCOVER
     void HandleNewMember(int newDividerId) override;
 
     // handle message: NEW_LEADER + NEW_MEMBER
     void HandleNewLeader(int dividerId) override;
-
-    // handle message: FELLOW_MEMBER + FELLOW_LEADER
-    void HandleDiscoverResult(int dividerId, RoleMode dividerRole) override;
 
     // TOPIC: leader alives
     // handle message: LEADER_ALIVE
@@ -71,9 +78,10 @@ public:
     void HandleMemberAlive(int memId, std::pair<int, int>) override;
 
 private:
-    // handling divider communications
+    // check if the member has the same id or not
     bool JustifyMember(int memberId);
 
+    // check if the leader
     bool JustifyLeader(int leaderId);
 
     int SearchLeaderId();

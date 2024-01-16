@@ -93,9 +93,33 @@ public:
 
     void ReadUIMessage(std::string msg);
 
+    // send message to all members
+    bool SendMessage(Node_t nodeType, int srcId, int content) const override
+    {
+        const char *topic = "";
+
+        // selecting topic
+        switch (nodeType)
+        {
+        case DIVIDER:
+            topic = topic_dividers;
+            break;
+        case GATE:
+            topic = topic = topic_gates;
+            break;
+        }
+
+        // 000 to string problem?
+        // sending the message
+        char data[200];
+        sprintf(data, "&%s-%s-%s;", std::to_string(srcId).c_str(), "000", std::to_string(content).c_str());
+        mqttClient->publish(topic, data);
+
+        return true;
+    }
     // send message to a specific id in the network
     // TODO - make function/method for selecting topic
-    int SendMessage(Node_t nodeType, int srcId, int destId, int content) const override
+    bool SendMessage(Node_t nodeType, int srcId, int destId, int content) const override
     {
         const char *topic = "";
 
@@ -110,15 +134,15 @@ public:
             break;
         }
 
+        // sending the message
         char data[200];
         sprintf(data, "&%s-%s-%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str());
         mqttClient->publish(topic, data);
 
-        return 1;
+        return true;
     }
 
-    // send message to all members
-    int SendMessage(Node_t nodeType, int srcId, int content) const override
+    bool SendMessage(Node_t nodeType, int srcId, int destId,std::pair<int, int> pairContent) const override
     {
         const char *topic = "";
 
@@ -130,16 +154,14 @@ public:
             break;
         case GATE:
             topic = topic = topic_gates;
-
             break;
         }
 
         char data[200];
-        // 000 to string problem?
-        sprintf(data, "&%s-%s-%s;", std::to_string(srcId).c_str(), "000", std::to_string(content).c_str());
+        sprintf(data, "&%s-%s-%s:%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(pairContent.first).c_str());
         mqttClient->publish(topic, data);
 
-        return 1;
+        return true;
     }
 
     static bool ConnectWiFi(WiFiClient *wifi)

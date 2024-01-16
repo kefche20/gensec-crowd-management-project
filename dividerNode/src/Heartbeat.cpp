@@ -86,7 +86,6 @@ namespace hrtbt
                 break;
             case END_TRACK:
                 //remove the node from the corresponding node manager 
-    
                 tracker->meta->Remove(tracker->beatId);
                 delete tracker;
                 break;
@@ -134,13 +133,18 @@ namespace hrtbt
         aliveTrackers.clear();
     }
 
+    void MetaAliveTracker::UpdateNewBeat(int id)
+    {
+        xQueueReceive(beatQueue,(void*)&id,portMAX_DELAY);
+    }
+
     bool MetaAliveTracker::IsTopBeatId(int id)
     {
         bool sta = false;
         if (!uxQueueMessagesWaiting(beatQueue))
         {
             int checkedId = 0;
-            xQueuePeek(beatQueue, &checkedId, 10);
+            xQueuePeek(beatQueue, &checkedId, 0);
 
             if (checkedId == id)
             {

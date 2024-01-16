@@ -1,4 +1,6 @@
 #include "Divider.hpp"
+#define MAX_BUSY_RATE 100
+#define MIN_BUSY_RATE 0
 
 Divider::Divider(int id, bool isLeader) : id(id), isLeader(isLeader)
 {
@@ -49,4 +51,23 @@ void Divider::SetLeader(RoleMode role)
         isLeader = false;
         break;
     }
+}
+
+bool Divider::UpdateLeastBusyGate(std::pair<int, int> newLeastBusyGate)
+{
+    if (leastBusyGate.second > MAX_BUSY_RATE || leastBusyGate.second < MIN_BUSY_RATE)
+    // cancle the updating if the rate is invalid
+    {
+        return false;
+    }
+
+    // updating the least busy gate data from the remote divider
+    this->leastBusyGate = newLeastBusyGate;
+
+    return true;
+}
+
+std::pair<int, int> Divider::GetGateData()
+{
+    return leastBusyGate;
 }

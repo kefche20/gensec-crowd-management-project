@@ -5,19 +5,57 @@ bool IsLeader(Divider divider)
     return divider.IsLeader();
 }
 
-DividerManager::DividerManager(int id) : id(id), metaAliveTracker(20, this), sender(nullptr)
+DividerManager::DividerManager(int id) : id(id), metaAliveTracker(20, this), sender(nullptr), localCollector(nullptr)
 {
     timer.SetInterval(WAIT_INTERVAL);
+}
+
+bool DividerManager::SetSender(ISender *sender)
+{
+    if (sender != nullptr)
+    {
+        return false;
+    }
+
+    this->sender = sender;
+    return true;
+}
+
+bool DividerManager::SetLocalCollector(IDataCollector *localCollector)
+{
+    if (localCollector)
+    {
+        return false;
+    }
+
+    this->localCollector = localCollector;
+
+    return true;
+}
+
+std::pair<int, int> DividerManager::GetLeastBusyGate()
+{
+    //least busy gate initialization
+    std::pair<int, int> leastBusyGate;
+    leastBusyGate.first = -1;  // id
+    leastBusyGate.second = 0; // busy rate
+
+    for (auto &divider : dividers)
+    {
+        std::pair<int, int> checkedGate = divider.GetGateData();
+        if (checkedGate.second < leastBusyGate.second)
+        //update least busy gate which have the lower busy rate
+        {
+            leastBusyGate = checkedGate;
+        }
+    }
+
+    return leastBusyGate;
 }
 
 int DividerManager::GetId()
 {
     return id;
-}
-
-void DividerManager::SetSender(ISender *sender)
-{
-    this->sender = sender;
 }
 
 bool DividerManager::Add(int newId)
@@ -116,8 +154,9 @@ void DividerManager::dividersChat()
         }
 
         if (timer.isTimeOut())
-        // FIXME - sending data of the lowest gate as heartbeat
+        // send data heartbeat to leader for every 5 second
         {
+            sender->SendMessage(DIVIDER, id, SearchLeaderId(), localCollector->GetLeastBusyGate());
         }
 
         if (role.IsLostedLeader())
@@ -165,16 +204,36 @@ void DividerManager::dividersChat()
     }
 }
 
+// REVIEW - when fellow member and leader is sent
+//  handle message: FELLOW_MEMBER + FELLOW_LEADER
+void DividerManager::HandleDiscoverResult(int dividerId, RoleMode dividerRole)
+{
+    // add a new divider id
+    Add(dividerId);
+
+    // set the role of new divider id
+    SetDividerRole(dividerId, dividerRole);
+
+    // become a member if there is a leader response
+    if (dividerRole == LEADER)
+    {
+        role.SetAssignedMember();
+    }
+}
+
 void DividerManager::HandleNewMember(int newId)
 {
     if (JustifyMember(newId))
+    // check if the new divider has the same id
     {
-        Add(newId);
-        sender->SendMessage(DIVIDER, id, newId, RoleControl::RoleToInt(role.GetMode())); // introduce its role to new members
-    }
-    else
-    // handle divider with the same id ?
-    {
+        if (Add(newId))
+        {
+            sender->SendMessage(DIVIDER, id, newId, RoleControl::RoleToInt(role.GetMode())); // introduce its role to new members
+        }
+        else
+        // REVIEW - if not add successfully => divider id is already exist
+        {
+        }
     }
 }
 
@@ -200,23 +259,21 @@ void DividerManager::HandleLeaderAlive(int leaderId)
         metaAliveTracker.UpdateNewBeat(leaderId);
     }
     else
+    // REVIEW - should the handle for the wrong leader be implementing => self check and update leader
     {
     }
 }
 
-// REVIEW - when fellow member and leader is sent
-//  handle message: FELLOW_MEMBER + FELLOW_LEADER
-void DividerManager::HandleDiscoverResult(int dividerId, RoleMode dividerRole)
+void DividerManager::HandleMemberAlive(int memId, std::pair<int, int> data)
 {
-    // add a new divider id
-    Add(dividerId);
+    // finding the divider with the corresponding id
+    auto divider = std::find(dividers.begin(), dividers.end(), memId);
 
-    // set the role of new divider id
-    SetDividerRole(dividerId, dividerRole);
-
-    if (dividerRole == LEADER)
+    if (divider != dividers.end())
+    // update the latest least busy gate  and add heartbeat id from remote divider
     {
-        role.SetAssignedMember();
+        divider->UpdateLeastBusyGate(data);
+        metaAliveTracker.UpdateNewBeat(memId);
     }
 }
 

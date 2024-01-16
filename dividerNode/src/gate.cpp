@@ -44,12 +44,24 @@ void Gate::addPerson(int numOfPeople)
   // TODO Handle case when gate is at maximum
 }
 
-void Gate::refreshCount(int count)
+bool Gate::refreshCount(int count)
 {
+  if(peopleCount > maxCapacity)
+  {
+      return false;
+  }
+
   peopleCount = count;
+
+  return true;
 }
 
 int Gate::getLineCount()
 {
   return peopleCount;
+}
+
+int Gate::GetBusyRate()
+{
+  return peopleCount / maxCapacity;
 }

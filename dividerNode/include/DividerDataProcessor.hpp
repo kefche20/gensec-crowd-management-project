@@ -23,7 +23,7 @@ public:
     virtual int GetId() = 0;
 
     // return to the current role in the divider network
-    virtual RoleMode GetRoleMode() = 0;
+    //virtual RoleMode GetRoleMode() = 0;
 };
 
 class IDivListener : public IDivNode
