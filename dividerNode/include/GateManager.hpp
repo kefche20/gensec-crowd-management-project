@@ -108,9 +108,6 @@ public:
   // Add a person to the gate with the given ID
   void addPersonToGate(int id, int numOfPeople);
 
-  // Add a person to the gate with the given ID
-  void addPersonToGate(int id, int numOfPeople);
-
   // Allocate a person to the least busy gate
   void allocatePersonToGate();
 

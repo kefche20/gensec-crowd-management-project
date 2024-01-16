@@ -1,6 +1,6 @@
 #include "Messager.hpp"
 
-int Messager::SetListener(IDivListener *divListener, IGateListener *gateListener, IGuider *guider)
+int Messager::SetListener(IDivListener *divListener, IGateListener *gateListener, ICusListener *guider)
 {
     if (divListener == nullptr)
     {
@@ -9,7 +9,7 @@ int Messager::SetListener(IDivListener *divListener, IGateListener *gateListener
 
     this->divListener = divListener;
     this->gateListener = gateListener;
-    this->guider = guider;
+    this->cusListener = guider;
 
     return 1;
 }
@@ -117,7 +117,7 @@ void Messager::HandleBoardcastMessage(int srcId, DividerBoardcastMessage msgCode
     case LEADER_ALIVE:
         divListener->HandleLeaderAlive(srcId);
         break;
-        
+
     default:
         // handle unvalid message
         break;
@@ -217,13 +217,29 @@ void Messager::ReadUIMessage(std::string msg)
 
 void Messager::HandleUIMessage(UIMessage msgCode, int data)
 {
-
     switch (msgCode)
     {
     case CHECK_IN:
-        guider->HandleCustomerCheckIn(data);
+        cusListener->HandleCustomerRequest(true);
         break;
+
+    case ACK:
+        cusListener->HandleCustomerRequest(false);
     default:
+        break;
+    }
+}
+
+
+char* SelectTopic(Topic topic)
+{
+    switch(topic)
+    {
+        case UI:
+        break;
+        case DIVIDER_ROLE:
+        break;
+        case DIVIDER_ALIVE:
         break;
     }
 }

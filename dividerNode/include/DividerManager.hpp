@@ -25,7 +25,7 @@
 
 */
 
-class DividerManager : public IDivListener, public INodeManager, public IDataCollector
+class DividerManager : public IDivListener, public INodeManager, public IRemoteDataCollector
 {
 private:
     int id;
@@ -49,6 +49,8 @@ public:
     std::pair<int, int> GetLeastBusyGate() override;
 
     int GetId() override;
+
+    RoleMode GetRoleMode() override;
 
     bool Add(int id) override;
 

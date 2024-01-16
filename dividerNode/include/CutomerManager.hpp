@@ -6,10 +6,9 @@
 
 #include "StateControl.hpp"
 
-#include "IGuider.hpp"
+#include "ICusListener.hpp"
 #include "Gate.hpp"
-#include "IRemoteCollector.hpp"
-#include "ILocalCollector.hpp"
+#include "IDataCollector.hpp"
 #include "ISender.hpp"
 
 enum GuidingState
@@ -21,22 +20,27 @@ enum GuidingState
 
 };
 
-class CustomerManager : public IGuider
+class CustomerManager : public ICusListener
 {
 private:
     bool isRequested;
     StateControl<GuidingState> control;
+    
+    int leastBusyGateId;
 
-    ILocalCollector *localCollector;
-    IRemoteCollector *remoteCollector;
+    IDataCollector *localCollector;
+    IRemoteDataCollector *remoteCollector;
     ISender *sender;
 
 public:
-    CustomerManager(ILocalCollector *localCollector, IRemoteCollector *remoteCollector);
+    CustomerManager(IDataCollector *localCollector, IRemoteDataCollector *remoteCollector);
 
-    void HandleCustomerCheckIn(int data) override;
+    void HandleCustomerRequest( bool reqSta) override;
 
     void ResponseGuidingRequest();
+
+private:
+    bool GetLeastBusyGateId();
 };
 
 #endif

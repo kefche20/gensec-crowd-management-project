@@ -87,7 +87,7 @@ void callback(char *topic, uint8_t *payload, unsigned int length)
   {
     // read the gate message
   }
-  else if (topic == topic_UI)
+  else if (topic == topic_ui)
   {
     // read message form the ui
   }
