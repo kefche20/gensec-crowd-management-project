@@ -20,9 +20,6 @@
 #include "ICusListener.hpp"
 #include "ISender.hpp"
 
-
-
-
 const int MQTT_PORT = 1883;
 
 /*
@@ -71,22 +68,25 @@ public:
 
     void MqttLoop();
     // perform logic of dealing with message
-    void ReadDividerMessage(std::string msg);
+    void ReadDividerRoleMessage(std::string msg);
+
+    void ReadDividerAliveMessage(std::string msg);
 
     void ReadGateMessage(std::string msg);
 
     void ReadUIMessage(std::string msg);
 
     // send message to all members
-    bool SendMessage(Topic topic, int srcId, int content)  override;
+    bool SendMessage(Topic topic, int srcId, int content) override;
 
     // TODO - make function/method for selecting topic
-    bool SendMessage(Topic topic, int srcId, int destId, int content)  override;
+    bool SendMessage(Topic topic, int srcId, int destId, int content) override;
 
-    bool SendMessage(Topic topic, int srcId, int destId,std::pair<int, int> pairContent) override;
+    bool SendMessage(Topic topic, int srcId, int destId, int content, int data) override;
+
+    bool SendMessage(Topic topic, int srcId, int destId, int content, std::pair<int, int> pairContent) override;
 
     static bool ConnectWiFi(WiFiClient *wifi);
-   
 
 private:
     void HandleBoardcastMessage(int srcId, DividerBoardcastMessage msgCode);
@@ -97,24 +97,36 @@ private:
 
     void HandleUIMessage(UIMessage msgCode, int data);
 
-    const char* SelectTopic(Topic topic);
+    const char *SelectTopic(Topic topic);
 
     static std::string ExtractContent(CONTENT_TYPE type, std::string msg)
     {
-        int contentPosition = type;
+        int contentPosition = 0;
         int readLength;
+
         switch (type)
         {
+        case SRC_ID:
+            contentPosition = 1;
+            readLength = ID_LENGTH;
+            break;
+        case DES_ID:
+            contentPosition = msg.find('>') + 1;
+            readLength = ID_LENGTH;
+            break;
         case MSG:
+            contentPosition = msg.find('-') + 1;
             readLength = MSG_LENGTH;
             break;
         case DATA:
+            contentPosition = msg.find('+') + 1;
             readLength = DATA_LENGTH;
             break;
-        case SRC_ID:
-        case DES_ID:
-            readLength = ID_LENGTH;
+        case DATA2:
+            contentPosition = msg.find(':') + 1;
+            readLength = DATA_LENGTH;
             break;
+
         default:
             // fail detect conent type
             break;
@@ -127,6 +139,9 @@ private:
     {
         char f_letter = msg.front();
         char l_letter = msg.back();
+
+        // Serial.println(f_letter);
+        // Serial.println(l_letter)
 
         return f_letter == '&' && l_letter == ';';
     }

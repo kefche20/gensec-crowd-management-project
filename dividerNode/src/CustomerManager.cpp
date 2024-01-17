@@ -1,4 +1,4 @@
-#include "CutomerManager.hpp"
+#include "CustomerManager.hpp"
 #define ERROR -1
 
 CustomerManager::CustomerManager(IDataCollector *localCollector, IRemoteDataCollector *remoteCollector) : isRequested(isRequested), control(IDLE_G), localCollector(localCollector), remoteCollector(remoteCollector), leastBusyGateId(0)

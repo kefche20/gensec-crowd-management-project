@@ -11,14 +11,15 @@
 class ISender
 {
 public:
-    //send message on specific topics
-    //virtual bool SendMessage();
+    // send message on specific topics
+    // virtual bool SendMessage();
 
     // send boardcast
     virtual bool SendMessage(Topic nodeType, int SrcId, int content) = 0;
 
     // send to a specific id
     virtual bool SendMessage(Topic nodeType, int SrcId, int destId, int content) = 0;
-    virtual bool SendMessage(Topic nodeType, int srcId, int destId, std::pair<int, int> pairContent) = 0;
+    virtual bool SendMessage(Topic nodeType, int srcId, int destId, int content, int data) = 0;
+    virtual bool SendMessage(Topic nodeType, int srcId, int destId, int content, std::pair<int, int> pairData) = 0;
 };
 #endif

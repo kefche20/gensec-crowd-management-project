@@ -7,6 +7,8 @@
 #include <iostream>
 #include <string>
 #include <list>
+#include <memory>
+
 #include "INodeManager.hpp"
 #include "IAliveManager.hpp"
 
@@ -66,7 +68,7 @@ namespace hrtbt
 
     ~NodeAliveTracker();
 
-    bool operator==(int id);
+    int GetId();
 
     bool operator==(const NodeAliveTracker &tracker);
 
@@ -77,7 +79,7 @@ namespace hrtbt
   class MetaAliveTracker : public IAliveManager
   {
   private:
-    std::list<NodeAliveTracker> aliveTrackers;
+    std::list<std::unique_ptr<NodeAliveTracker>> aliveTrackers;
     QueueHandle_t beatQueue; // stored the id of node beats
 
     INodeManager *nodeManager;

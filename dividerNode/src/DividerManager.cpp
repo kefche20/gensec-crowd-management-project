@@ -5,37 +5,37 @@ bool IsLeader(Divider divider)
     return divider.IsLeader();
 }
 
-DividerManager::DividerManager(int id) : id(id), metaAliveTracker(20, this), sender(nullptr), localCollector(nullptr)
+DividerManager::DividerManager(int id) : id(id), metaAliveTracker(20, this), sender(nullptr), localCollector(nullptr), role()
 {
     timer.SetInterval(WAIT_INTERVAL);
 }
 
-bool DividerManager::SetSender(ISender *sender)
+bool DividerManager::SetSender(ISender *newSender)
 {
-    if (sender != nullptr)
+    if (newSender == nullptr)
     {
         return false;
     }
 
-    this->sender = sender;
+    this->sender = newSender;
     return true;
 }
 
-bool DividerManager::SetLocalCollector(IDataCollector *localCollector)
+bool DividerManager::SetLocalCollector(IDataCollector *newLocalCollector)
 {
-    if (localCollector)
+    if (newLocalCollector == nullptr)
     {
         return false;
     }
 
-    this->localCollector = localCollector;
+    this->localCollector = newLocalCollector;
 
     return true;
 }
 
 std::pair<int, int> DividerManager::GetLeastBusyGate()
 {
-    //least busy gate initialization
+    // least busy gate initialization
     std::pair<int, int> leastBusyGate;
     leastBusyGate.first = -1;  // id
     leastBusyGate.second = -1; // busy rate
@@ -44,7 +44,7 @@ std::pair<int, int> DividerManager::GetLeastBusyGate()
     {
         std::pair<int, int> checkedGate = divider.GetGateData();
         if (checkedGate.second < leastBusyGate.second)
-        //update least busy gate which have the lower busy rate
+        // update least busy gate which have the lower busy rate
         {
             leastBusyGate = checkedGate;
         }
@@ -58,9 +58,9 @@ int DividerManager::GetId()
     return id;
 }
 
-RoleMode DividerManager::GetRoleMode() 
+RoleMode DividerManager::GetRoleMode()
 {
-   return role.GetMode();
+    return role.GetMode();
 }
 
 bool DividerManager::Add(int newId)
@@ -100,13 +100,17 @@ bool DividerManager::Remove(int removedId)
 
 void DividerManager::dividersChat()
 {
+    // RoleMode rolecheck = role.GetMode();
+    // Serial.println(rolecheck);
     switch (role.GetMode())
     {
     case IDLE:
         if (role.IsNewMode())
         // send discover message
         {
+
             sender->SendMessage(DIVIDER_ROLE, id, DISCOVER);
+
             timer.Reset();
             role.ClearEntryFlag();
         }
@@ -127,8 +131,12 @@ void DividerManager::dividersChat()
         if (role.IsNewMode())
         // check if become the next leader
         {
+            Serial.println("being neutral!");
+
             if (IsNextLeader())
             {
+                Serial.println("being leader!");
+
                 sender->SendMessage(DIVIDER_ROLE, id, NEW_LEADER);
                 role.UpdateMode(LEADER);
             }
@@ -139,7 +147,7 @@ void DividerManager::dividersChat()
         // if other is assigned as leader already
         {
             role.UpdateMode(MEMBER);
-            sender->SendMessage(DIVIDER_ROLE, id, RoleControl::RoleToInt(role.GetMode())); // double check? make sure other know it as member.
+            sender->SendMessage(DIVIDER_ALIVE, id, RoleControl::RoleToInt(role.GetMode())); // double check? make sure other know it as member.
         }
         break;
 
@@ -147,10 +155,11 @@ void DividerManager::dividersChat()
         if (role.IsNewMode())
         // start to keep track on the leader hearbeat
         {
+            Serial.println("being member!");
             // destroy all current heart and adding the leader heart
             metaAliveTracker.RemoveAll();
             metaAliveTracker.Add(SearchLeaderId());
-
+           
             // reset the timer period for sending leader heartbeat
             timer.SetInterval(DEFAULT_RATE);
             timer.Reset();
@@ -161,7 +170,10 @@ void DividerManager::dividersChat()
         if (timer.isTimeOut())
         // send data heartbeat to leader for every 5 second
         {
-            sender->SendMessage(DIVIDER_ROLE, id, SearchLeaderId(), localCollector->GetLeastBusyGate());
+            Serial.println("send member alive message");
+        
+            sender->SendMessage(DIVIDER_ALIVE, id, SearchLeaderId(), MEMBER_ALIVE, localCollector->GetLeastBusyGate());
+            timer.Reset();
         }
 
         if (role.IsLostedLeader())
@@ -176,6 +188,9 @@ void DividerManager::dividersChat()
         if (role.IsNewMode())
         // begin the heart beat timer
         {
+            Serial.println("being leader!");
+
+            // take heartbeat from all divider
             for (auto &divider : dividers)
             {
                 if (!divider.IsLeader())
@@ -193,7 +208,7 @@ void DividerManager::dividersChat()
         if (timer.isTimeOut())
         // leader sent heartbeat to notify member of its alive
         {
-            sender->SendMessage(DIVIDER_ROLE, id, LEADER_ALIVE);
+            sender->SendMessage(DIVIDER_ALIVE, id, LEADER_ALIVE);
             timer.Reset();
         }
 
@@ -214,15 +229,20 @@ void DividerManager::dividersChat()
 void DividerManager::HandleDiscoverResult(int dividerId, RoleMode dividerRole)
 {
     // add a new divider id
-    Add(dividerId);
+    bool addSta = Add(dividerId);
 
     // set the role of new divider id
-    SetDividerRole(dividerId, dividerRole);
+    bool setRoleSta = SetDividerRole(dividerId, dividerRole);
+
+    Serial.println("-- result of adding fellow divider from discover result -- ");
+    Serial.println(addSta);
+    Serial.println(setRoleSta);
 
     // become a member if there is a leader response
     if (dividerRole == LEADER)
     {
         role.SetAssignedMember();
+        sender->SendMessage(DIVIDER_ROLE, id, 222);
     }
 }
 
@@ -231,14 +251,25 @@ void DividerManager::HandleNewMember(int newId)
     if (JustifyMember(newId))
     // check if the new divider has the same id
     {
-        if (Add(newId))
+        Serial.println("accept new member ");
+        Add(newId);
+        // if (Add(newId))
+        // {
+        Serial.println("add new member!");
+        sender->SendMessage(DIVIDER_ROLE, id, newId, RoleControl::RoleToInt(role.GetMode())); // introduce its role to new members
+
+        // start to keep track on new member of currently is a leader
+        if (role.GetMode() == LEADER)
         {
-            sender->SendMessage(DIVIDER_ROLE, id, newId, RoleControl::RoleToInt(role.GetMode())); // introduce its role to new members
+            Serial.println("start to keep track on member");
+            metaAliveTracker.Add(newId);
         }
-        else
-        // REVIEW - if not add successfully => divider id is already exist
-        {
-        }
+        // }
+        // else
+        // // REVIEW - if not add successfully => divider id is already exist
+        // {
+
+        // }
     }
 }
 
@@ -259,8 +290,10 @@ void DividerManager::HandleNewLeader(int dividerId)
 
 void DividerManager::HandleLeaderAlive(int leaderId)
 {
+
     if (leaderId == SearchLeaderId())
     {
+        Serial.println("update leader beat");
         metaAliveTracker.UpdateNewBeat(leaderId);
     }
     else
@@ -327,15 +360,15 @@ int DividerManager::IsNextLeader()
 
 int DividerManager::SearchLeaderId()
 {
-   for(auto &divider:dividers)
-   {
-    if(divider.IsLeader() )
+    for (auto &divider : dividers)
     {
-        return divider.GetId();
+        if (divider.IsLeader())
+        {
+            return divider.GetId();
+        }
     }
-   }
 
-   return -1;
+    return -1;
 }
 
 bool DividerManager::IsMemberExist(int checkId)
@@ -354,6 +387,8 @@ bool DividerManager::SetDividerRole(int id, RoleMode role)
     // check if divider's id is found
     if (divider != dividers.end())
     {
+        divider->SetLeader(role);
+        sta = true;
     }
 
     return sta;

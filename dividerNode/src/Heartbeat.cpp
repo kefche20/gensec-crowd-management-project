@@ -3,7 +3,6 @@
 #include <algorithm>
 
 #include <Arduino.h>
-
 namespace hrtbt
 {
     Heartbeat::Heartbeat(long beatRate, long maxOffset) : beatRate(beatRate), maxOffset(maxOffset)
@@ -34,38 +33,45 @@ namespace hrtbt
         return ALIVE;
     }
 
-    // DEFINITION of NodeAliveTracker
+    // DEFINITION of NodeAliveTracker //REVIEW - the task will be create and delete two time? is this safe?
     NodeAliveTracker::NodeAliveTracker(int beatId, IAliveManager *meta) : beatId(beatId), heartbeat(DEFAULT_RATE, DEFAULT_OFFSET), meta(meta)
     {
         // creating beat tracker task
+        Serial.print("start keep track on: ");
+        Serial.println(beatId);
         std::string taskName = "heartbeat tracker " + std::to_string(beatId);
         xTaskCreate(NodeAliveTracker::BeatTrackingTask, taskName.c_str(), STACKDEPTH, this, 2, &trackingHandler);
+        Serial.println("done node alive tracker constructor!");
     }
 
     NodeAliveTracker::~NodeAliveTracker()
     {
-        vTaskDelete(trackingHandler);
+        Serial.println("tracker is removed!");
+       // vTaskDelete(trackingHandler);
     }
 
-    bool NodeAliveTracker::operator==(int id)
+    int NodeAliveTracker::GetId()
     {
-        return beatId == id;
+        return beatId;
     }
 
     bool NodeAliveTracker::operator==(const NodeAliveTracker &tracker)
     {
+        Serial.println("track id");
+
         return this->beatId == tracker.beatId;
     }
 
     void NodeAliveTracker::BeatTrackingTask(void *parameter)
     {
+        Serial.println("start beat tracking task!-------");
+
         // casting back to the class pointer after passing through the freeRTOS task paramter
         NodeAliveTracker *tracker = static_cast<NodeAliveTracker *>(parameter);
         TrackState state = READ_ID;
 
         // restart the intial beat record to the current time
         tracker->heartbeat.RefreshLastBeat();
-
         // keeping track to check its id beat. if there is no beat in a certain period, consider as dead and remove
         while (1)
         {
@@ -73,23 +79,27 @@ namespace hrtbt
             {
             case READ_ID:
                 // node's heart will beat whenever there are
+                // Serial.println("in read id state");
                 if (tracker->meta->IsTopBeatId(tracker->beatId))
                 {
                     // update the beat to the latest moment
+                    Serial.println("heart is beating!");
                     tracker->heartbeat.RefreshLastBeat();
                 }
 
                 if (tracker->heartbeat.TrackingAlive() == DEAD)
                 {
+                    Serial.println("node is dead!");
                     state = END_TRACK;
                 }
                 break;
             case END_TRACK:
-                //remove the node from the corresponding node manager 
+                // remove the node from the corresponding node manager
                 tracker->meta->Remove(tracker->beatId);
-                delete tracker;
                 break;
             }
+
+            vTaskDelay(10 / portTICK_PERIOD_MS);
         }
     }
 
@@ -106,9 +116,11 @@ namespace hrtbt
         {
             return false;
         }
+         
+        //create smart pointer of the tracker
 
         // add the new node alive tracker into list + start monitoring alive
-        aliveTrackers.push_back(NodeAliveTracker(id, this));
+        aliveTrackers.push_back(std::unique_ptr<NodeAliveTracker>(new NodeAliveTracker(id,this)));
         return true;
     }
 
@@ -116,14 +128,16 @@ namespace hrtbt
     {
         bool sta = false;
         // search for the alive tracker corresponding with the id
-        auto result = std::find(aliveTrackers.begin(), aliveTrackers.end(), id);
+        for (auto &checkedTracker : aliveTrackers)
+        {
+            if (checkedTracker->GetId() == id)
+            {
+                aliveTrackers.remove(checkedTracker);
+                sta = true;
+            }
+        }
 
         // only remove if the tracker is exist
-        if (result != aliveTrackers.end())
-        {
-            aliveTrackers.remove(*result);
-            sta = true;
-        }
 
         return sta;
     }
@@ -135,7 +149,8 @@ namespace hrtbt
 
     void MetaAliveTracker::UpdateNewBeat(int id)
     {
-        xQueueReceive(beatQueue,(void*)&id,portMAX_DELAY);
+        Serial.println("update new beat");
+        xQueueSend(beatQueue, (void *)&id, portMAX_DELAY);
     }
 
     bool MetaAliveTracker::IsTopBeatId(int id)
@@ -156,9 +171,16 @@ namespace hrtbt
 
     bool MetaAliveTracker::IsIdExist(int id)
     {
-        auto result = std::find(aliveTrackers.begin(), aliveTrackers.end(), id);
+       bool sta = false;
+       for(auto &tracker:aliveTrackers)
+       {
+         if(tracker->GetId() == id)
+         {
+            sta = true;
+         }
+       }
 
-        return result != aliveTrackers.end();
+        return sta;
     }
 
     void MetaAliveTracker::FilteringThrownIdTask(void *parameter)

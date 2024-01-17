@@ -69,73 +69,7 @@ void Messager::MqttLoop()
     mqttClient->loop();
 }
 
-bool Messager::SendMessage(Topic topic, int srcId, int content)
-{
-    const char *selectTopic = "default";
-    selectTopic = SelectTopic(topic);
-
-    char data[200];
-    sprintf(data, "%s-%s-%s;", std::to_string(srcId).c_str(), "000", std::to_string(content).c_str());
-    mqttClient->publish(selectTopic, data);
-
-    return true;
-}
-
-bool Messager::SendMessage(Topic topic, int srcId, int destId, int content)
-{
-    const char *selectTopic = "default";
-    selectTopic = SelectTopic(topic);
-
-    char data[200];
-    sprintf(data, "&%s-%s-%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str());
-
-    return true;
-}
-
-bool Messager::SendMessage(Topic topic, int srcId, int destId, std::pair<int, int> pairContent)
-{
-    const char *selectTopic = "default";
-    selectTopic = SelectTopic(topic);
-
-    char data[200];
-    sprintf(data, "&%s-%s-%s:%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(pairContent.first).c_str(), std::to_string(pairContent.first).c_str());
-    mqttClient->publish(selectTopic, data);
-}
-
-void Messager::ReadDividerMessage(std::string msg)
-{
-
-    if (!IsMsgVaid(msg))
-    {
-        return;
-    }
-
-    // recieved id
-    int srcId = -1;
-    int desId = -1;
-    int msgCode = -1;
-    srcId = std::stoi(ExtractContent(SRC_ID, msg));
-    desId = std::stoi(ExtractContent(DES_ID, msg));
-    msgCode = std::stoi(ExtractContent(MSG, msg));
-
-    // join network - make friend - optimize this code
-    if (srcId == divListener->GetId())
-    {
-        return;
-    }
-
-    // TODO: check send wrong code
-    if (desId == BOARDCAST_ID)
-    {
-        HandleBoardcastMessage(srcId, (DividerBoardcastMessage)msgCode);
-    }
-    else if (desId == divListener->GetId())
-    {
-        HandleDirectMessage(srcId, (DividerDirectMessage)msgCode);
-    }
-}
-
- bool Messager::ConnectWiFi(WiFiClient *wifi)
+bool Messager::ConnectWiFi(WiFiClient *wifi)
 {
     if (wifi == nullptr)
     {
@@ -156,6 +90,95 @@ void Messager::ReadDividerMessage(std::string msg)
     return true;
 }
 
+bool Messager::SendMessage(Topic topic, int srcId, int content)
+{
+    const char *selectTopic = "default";
+    selectTopic = SelectTopic(topic);
+
+    char data[200];
+    sprintf(data, "&%s>%s-%s;", std::to_string(srcId).c_str(), "000", std::to_string(content).c_str());
+    mqttClient->publish(selectTopic, data);
+
+    return true;
+}
+
+bool Messager::SendMessage(Topic topic, int srcId, int destId, int content)
+{
+    const char *selectTopic = "default";
+    selectTopic = SelectTopic(topic);
+
+    char data[200];
+    sprintf(data, "&%s>%s-%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str());
+    mqttClient->publish(selectTopic, data);
+
+    return true;
+}
+
+bool Messager::SendMessage(Topic topic, int srcId, int destId, int content, int sendedData)
+{
+    const char *selectTopic = "default";
+    selectTopic = SelectTopic(topic);
+
+    char data[200];
+    sprintf(data, "&%s>%s-%s+%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str(), std::to_string(sendedData).c_str());
+    mqttClient->publish(selectTopic, data);
+
+    return true;
+}
+
+bool Messager::SendMessage(Topic topic, int srcId, int destId, int content, std::pair<int, int> pairData)
+{
+
+    const char *selectTopic = "default";
+    selectTopic = SelectTopic(topic);
+    char data[200];
+    sprintf(data, "&%s>%s-%s+%s:%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str(), std::to_string(pairData.first).c_str(), std::to_string(pairData.second).c_str());
+
+    mqttClient->publish(selectTopic, data);
+
+    return true;
+}
+
+void Messager::ReadDividerRoleMessage(std::string msg)
+{
+    Serial.print("read divider message: ");
+    Serial.println(msg.c_str());
+
+    if (!IsMsgVaid(msg))
+    {
+        return;
+    }
+
+    // recieved id
+    int srcId = -1;
+    int desId = -1;
+    int msgCode = -1;
+    srcId = std::stoi(ExtractContent(SRC_ID, msg));
+    desId = std::stoi(ExtractContent(DES_ID, msg));
+    msgCode = std::stoi(ExtractContent(MSG, msg));
+
+    Serial.println("Extracted boardcase divider message: ");
+    Serial.println(srcId);
+    Serial.println(desId);
+    Serial.println(msgCode);
+
+    // join network - make friend - optimize this code
+    if (srcId == divListener->GetId())
+    {
+        return;
+    }
+
+    // TODO: check send wrong code
+    if (desId == BOARDCAST_ID)
+    {
+        HandleBoardcastMessage(srcId, (DividerBoardcastMessage)msgCode);
+    }
+    else if (desId == divListener->GetId())
+    {
+        HandleDirectMessage(srcId, (DividerDirectMessage)msgCode);
+    }
+}
+
 void Messager::HandleBoardcastMessage(int srcId, DividerBoardcastMessage msgCode)
 {
     switch (msgCode)
@@ -167,11 +190,6 @@ void Messager::HandleBoardcastMessage(int srcId, DividerBoardcastMessage msgCode
     case NEW_LEADER:
         divListener->HandleNewLeader(srcId);
         break;
-
-    case LEADER_ALIVE:
-        divListener->HandleLeaderAlive(srcId);
-        break;
-
     default:
         // handle unvalid message
         break;
@@ -193,6 +211,42 @@ void Messager::HandleDirectMessage(int srcId, DividerDirectMessage msgCode)
         divListener->HandleDiscoverResult(srcId, LEADER);
         break;
 
+        break;
+    }
+}
+
+void Messager::ReadDividerAliveMessage(std::string msg)
+{
+    Serial.print("read divider message: ");
+    Serial.println(msg.c_str());
+
+    if (!IsMsgVaid(msg))
+    {
+        return;
+    }
+
+    // recieved id
+    int srcId = -1;
+    int msgCode = -1;
+    srcId = std::stoi(ExtractContent(SRC_ID, msg));
+    msgCode = std::stoi(ExtractContent(MSG, msg));
+
+    // Serial.println("Extracted boardcase divider message: ");
+    // Serial.println(srcId);
+    // Serial.println(msgCode);
+
+    // join network - make friend - optimize this code
+    if (srcId == divListener->GetId())
+    {
+        return;
+    }
+
+    switch (msgCode)
+    {
+    case LEADER_ALIVE:
+        divListener->HandleLeaderAlive(srcId);
+        break;
+    case MEMBER_ALIVE:
         break;
     }
 }
@@ -296,6 +350,9 @@ const char *Messager::SelectTopic(Topic topic)
         break;
     case DIVIDER_ALIVE:
         return topic_dividers_alive;
+        break;
+    default:
+        return "default";
         break;
     }
 }
