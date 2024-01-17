@@ -9,12 +9,10 @@ enum RoleMode
 {
     VOID = -1,
     IDLE = 0,
-    NEUTRAL, //checking state to find out the next leader
+    NEUTRAL, // checking state to find out the next leader
     LEADER,
     MEMBER
 };
-
-
 
 class IDivNode
 {
@@ -23,13 +21,13 @@ public:
     virtual int GetId() = 0;
 
     // return to the current role in the divider network
-    //virtual RoleMode GetRoleMode() = 0;
+    // virtual RoleMode GetRoleMode() = 0;
 };
 
 class IDivListener : public IDivNode
 {
 public:
-    // void Handle response to icoming message
+    // void Handle response to incoming message
     virtual void HandleNewMember(int id) = 0;
 
     // handle role change
@@ -45,10 +43,10 @@ public:
     virtual void HandleDiscoverResult(int id, RoleMode role) = 0;
 };
 
-// REIVEW - make an inheritant form stateControl
+// REVIEW - make an inheritant form stateControl
 class RoleControl
 {
-    private:
+private:
     //basic role mode data
     RoleMode mode;
     RoleMode preMode;
@@ -57,7 +55,7 @@ class RoleControl
     bool isAssignedMember;
     bool isLostedLeader;
 
-    public:
+public:
     RoleControl();
 
     void SetAssignedMember();

@@ -6,12 +6,6 @@
 #include "Heartbeat.hpp"
 #include "DividerDataProcessor.hpp"
 
-
-// TODO
-/*
-
-*/
-
 #define WAIT_INTERVAL 5000
 
 class Divider
@@ -39,7 +33,7 @@ public:
     // get the role sta if leader
     bool IsLeader();
 
-    // set the role sta
+    // set the role state
     void SetLeader(RoleMode role);
 
     bool UpdateLeastBusyGate(std::pair<int, int> leastBusyGate);

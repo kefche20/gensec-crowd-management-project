@@ -22,7 +22,6 @@ void CustomerManager::ResponseGuidingRequest()
     case WAITING_REQUEST:
         if (control.IsNewState())
         {
-
             control.Refresh();
         }
 

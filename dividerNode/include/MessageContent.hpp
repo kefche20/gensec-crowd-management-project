@@ -30,11 +30,11 @@ enum CONTENT_TYPE
 
 enum DividerBoardcastMessage
 {
-   DISCOVER,     // 0
-   NEW_LEADER,   // 1
-   NEW_MEMBER,   // 2
-   LEADER_ALIVE, // 3
-   LEADER_DEAD,  // 4
+   DISCOVER,     
+   NEW_LEADER,   
+   NEW_MEMBER,   
+   LEADER_ALIVE, 
+   LEADER_DEAD,  
 };
 
 enum DividerDirectMessage

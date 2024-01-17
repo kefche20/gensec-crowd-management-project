@@ -7,7 +7,6 @@ class IAliveManager :public INodeManager
 {
     public: 
     virtual bool IsTopBeatId(int id) = 0;
-    
 };
 
 #endif

@@ -17,7 +17,6 @@ enum GuidingState
     WAITING_REQUEST,
     COLLECT_DATA,
     RESPONSE,
-
 };
 
 class CustomerManager : public ICusListener

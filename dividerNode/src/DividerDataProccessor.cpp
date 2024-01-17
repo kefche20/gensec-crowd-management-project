@@ -24,7 +24,7 @@ bool RoleControl::IsAssignedMember()
 {
     // read the assigned member state and clear back to false before return
     bool sta = isAssignedMember;
-    isAssignedMember = true;
+    isAssignedMember = false;
 
     return sta;
 }

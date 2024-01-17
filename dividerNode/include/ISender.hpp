@@ -7,12 +7,12 @@
 
 
 /*
- ISender interface allows the Divider send the messages by using the functions of the Messager class
+ ISender interface allows the Divider to send messages by using the functions of the Messager class
 */
 class ISender
 {
 public:
-    //send message on some specific topic
+    //send message on specific topics
     //virtual bool SendMessage();
 
     // send boardcast message
