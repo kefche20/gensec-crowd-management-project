@@ -24,6 +24,10 @@ public:
     void Reset();
 
     uint8_t isTimeOut();
+
+private: 
+     static uint32_t GetThreadTime();
+
 };
 
 #endif

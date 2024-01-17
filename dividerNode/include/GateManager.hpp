@@ -13,9 +13,10 @@
 
 #include "Gate.hpp"
 #include "heartbeat.hpp"
-#include "IGateListener.hpp"
-#include "INodeShifter.hpp"
 
+#include "IGateListener.hpp"
+#include "INodeManager.hpp"
+#include "IDataCollector.hpp"
 #include "ISender.hpp"
 
 /*
@@ -72,13 +73,13 @@ public:
 /*
   //TODO:
   1. check neccessary of letting AddNode and RemoveNode as interface
-  2. what the fuck meaning for storing information at two place
+
 */
 
-class GateManager : public IGateListener, public INodeManager
+class GateManager : public IGateListener, public INodeManager, public IDataCollector
 {
 private:
-  int id; //temporary test - id should be in the customer guider 
+  int id; // temporary test - id should be in the customer guider
   int maxGateNum;
 
   int openThreshold;  // Threshold to open a new gate
@@ -87,7 +88,7 @@ private:
 
   GeneralGatesState generalState;
   Traffic traffic; // keep track on close/open gate logic
-  hrtbt::MetaTracker *gateMetaTracker;
+  hrtbt::MetaAliveTracker metaAliveTracker;
 
   ISender *sender;
 
@@ -95,64 +96,14 @@ public:
   // Constructor
   GateManager(int maxGateNum, int openThreshold, int closeThreshold, ISender *sender);
 
-  // Add a new gate with the given ID
-
-  void AddNode(int id) override
-  {
-    if (gates.size() >= maxGateNum)
-    {
-      // TODO:: Throw error when too many gates are registered
-      return;
-    }
-
-    auto result = std::find(gates.begin(), gates.end(), id);
-
-    if (result != gates.end())
-    {
-      // throw id is already existed
-      return;
-    }
-
-    gates.push_back(Gate(id));
-  }
-
-  void RemoveNode(int id) override
-  {
-    auto gate = std::find(gates.begin(), gates.end(), id);
-
-    // remove if the gate exist
-    if (gate != gates.end())
-    {
-      gates.remove(*gate);
-    }
-  }
-
-  void HandleGateRegister(int id) override
-  {
-    // add new gate to list
-    AddNode(id);
-    // creat alive tracker for the new gate
-    gateMetaTracker->AddGateHeart(id);
-  }
-
-  void HandleGateDataBeats(int gateId, int numOfPeople) override
-  {
-    auto gate = std::find(gates.begin(), gates.end(), gateId);
-     
-    if (gate != gates.end())
-    //update the gat data and newest beats 
-    {
-        gate->refreshCount(numOfPeople);
-        gateMetaTracker->AddGateBeat(gateId);
-    }
-    else
-    {
-        //handle error of unfound id
-    }
-  }
-
   // Open the gate with the given ID
   void SetGateState(int id, bool sta);
+
+  std::pair<int, int> GetLeastBusyGate();
+
+  bool Add(int) override;
+
+  bool Remove(int) override;
 
   // Add a person to the gate with the given ID
   void addPersonToGate(int id, int numOfPeople);
@@ -160,10 +111,15 @@ public:
   // Allocate a person to the least busy gate
   void allocatePersonToGate();
 
-  // TODO -  find a better name for me
-  void GateOpenCloseLogic();
+  void HandleGateRegister(int id) override;
+
+  void HandleGateDataBeats(int gateId, int numOfPeople) override;
+
+  void GateChats();
 
 private:
+  // bool IsGateIdExist();
+
   // get the free space comparing to the total capacity
   float GetFreeSpaceRate();
 

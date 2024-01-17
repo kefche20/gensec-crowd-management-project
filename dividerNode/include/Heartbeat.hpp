@@ -6,22 +6,16 @@
 
 #include <iostream>
 #include <string>
-
-#include "INodeShifter.hpp"
+#include <list>
+#include "INodeManager.hpp"
+#include "IAliveManager.hpp"
 
 #define DEFAULT_RATE 5000
 #define DEFAULT_OFFSET 5000
 
-// #include <iostream>
-
-/*
-//TODO:
- transit implement code to
-
-*/
-
 namespace hrtbt
 {
+#define STACKDEPTH 2000
 
   enum status
   {
@@ -53,103 +47,65 @@ namespace hrtbt
     status TrackingAlive();
   };
 
-  struct NodeAliveTracker
+  class NodeAliveTracker
   {
-  public:
-    int id;
-
-    int beatRecord;
-    Heartbeat *heartbeat;
-    QueueHandle_t nodeBeats;
-
-    TrackState state;
-    INodeManager *nodeShifter;
-
-    NodeAliveTracker(int id, Heartbeat *heartbeat, QueueHandle_t nodeBeats, INodeManager *nodeShifter) : id(id), heartbeat(heartbeat), nodeBeats(nodeBeats), state(READ_ID), beatRecord(-1), nodeShifter(nodeShifter) {}
-
-    bool IsRightBeat()
-    {
-      return id == beatRecord;
-    }
-
-    void RefreshbeatRecord()
-    {
-      beatRecord = 0;
-    }
-  };
-
-  class MetaTracker
-  {
-  private:
-    int stackDepth;
-    INodeManager *nodeShifter;
-    QueueHandle_t nodeBeats; // stored the id of node beats
-
-  public:
-    MetaTracker(int lenOfBeats, INodeManager *nodeShifter) : nodeShifter(nodeShifter)
-    {
-      nodeBeats = xQueueCreate(lenOfBeats, sizeof(int));
-    }
-
-    void AddGateHeart(int id)
-    {
-      // create task name following node id
-      std::string taskName = "Node: ";
-      taskName += std::to_string(id);
-
-      // create new tracker for new node
-      NodeAliveTracker *nodeAliveTracker = new NodeAliveTracker(id, new Heartbeat(DEFAULT_RATE, DEFAULT_OFFSET), nodeBeats, nodeShifter);
-
-      // create task to keep track on node alive
-      xTaskCreate(MetaTracker::TrackingHeartAlive, taskName.c_str(), stackDepth, nodeAliveTracker, 1, nullptr);
-    }
-
-    void AddGateBeat(int id)
-    {
-      //store beats to be wait unting being read 
-      xQueueSend(nodeBeats, &id, 100);
-    }
 
   private:
-    static void TrackingHeartAlive(void *pvParameter)
-    {
-      // convert back to tracker
-      NodeAliveTracker *tracker = static_cast<NodeAliveTracker *>(pvParameter);
+    // heartbeat tracking data
+    int beatId;
+    Heartbeat heartbeat;
 
-      // task initialization
+    // the meta watching over the node alive tracker, which do two things: checking beatId from the queue and remove the node tracker if it's dead
+    IAliveManager *meta;
 
-      while (1)
-      {
-        switch (tracker->state)
-        {
-        case READ_ID:
-          // only read and remove the beat from the tracked id
-          if (xQueuePeek(tracker->nodeBeats, &tracker->beatRecord, 10) && tracker->IsRightBeat())
-          {
-            xQueueReceive(tracker->nodeBeats, &tracker->beatRecord, 10);
-            tracker->RefreshbeatRecord();
+    // real-time task, which handles the creation and delete the beatTrackingTask
+    TaskHandle_t trackingHandler;
 
-            tracker->heartbeat->RefreshLastBeat();
-          }
+  public:
+    NodeAliveTracker(int id, IAliveManager *metaTracker);
 
-          tracker->heartbeat->RefreshLastBeat();
+    ~NodeAliveTracker();
 
-          if (tracker->heartbeat->TrackingAlive() == DEAD)
-          {
-            tracker->state = END_TRACK;
-          }
+    bool operator==(int id);
 
-        case END_TRACK:
-        {
-          // remove node from the manager
-          tracker->nodeShifter->RemoveNode(tracker->id);
-          vTaskDelete(NULL);
-        }
-        }
-      }
-    }
+    bool operator==(const NodeAliveTracker &tracker);
+
+  private:
+    static void BeatTrackingTask(void *parameter);
   };
 
+  class MetaAliveTracker : public IAliveManager
+  {
+  private:
+    std::list<NodeAliveTracker> aliveTrackers;
+    QueueHandle_t beatQueue; // stored the id of node beats
+
+    INodeManager *nodeManager;
+
+  public:
+    MetaAliveTracker(int beatQueueLen, INodeManager *nodeManager);
+
+    // add a new node's tracker for tracking alive
+    bool Add(int id) override;
+
+    // remove a tracker with a specific id
+    bool Remove(int id) override;
+
+    // remove all node's tracker form the list 
+    void RemoveAll();
+
+    // update/ add new beat id to the beats queue
+    void UpdateNewBeat(int id);
+
+    // check if the latest beat id is as the indicated id
+    bool IsTopBeatId(int id) override;
+      
+  private:
+    bool IsIdExist(int id);
+    
+    //check and throw the beat id that is already deleted
+    static void FilteringThrownIdTask(void *parameter);
+  };
 }
 
 #endif

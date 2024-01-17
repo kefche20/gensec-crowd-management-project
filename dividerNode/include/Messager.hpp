@@ -15,31 +15,15 @@
 #include "Heartbeat.hpp"
 
 // interface
-#include "IDivListener.hpp"
+#include "DividerDataProcessor.hpp"
 #include "IGateListener.hpp"
-#include "IGuider.hpp"
+#include "ICusListener.hpp"
 #include "ISender.hpp"
 
-#define ID_LENGTH 3
-#define MSG_LENGTH 1
-#define DATA_LENGTH 2
 
-#define SRC_ID_POS 1
-#define DES_ID_POS 5
-#define MSG_POS 9
-#define DATA_POS 11
 
-#define BOARDCAST_ID 000
 
 const int MQTT_PORT = 1883;
-
-enum CONTENT_TYPE
-{
-    SRC_ID = SRC_ID_POS,
-    DES_ID = DES_ID_POS,
-    MSG = MSG_POS,
-    DATA = DATA_POS
-};
 
 /*
 //TODO
@@ -64,19 +48,19 @@ private:
     //
     IDivListener *divListener;
     IGateListener *gateListener;
-    IGuider *guider;
+    ICusListener *cusListener;
 
 public:
-    Messager(WiFiClient *espClient) : divListener(nullptr), gateListener(nullptr), guider(nullptr)
+    Messager(WiFiClient *espClient) : divListener(nullptr), gateListener(nullptr), cusListener(nullptr)
     {
         mqttClient = new PubSubClient(*espClient);
     }
 
-    Messager(PubSubClient *mqttClient) : divListener(nullptr), gateListener(nullptr), guider(nullptr)
+    Messager(PubSubClient *mqttClient) : divListener(nullptr), gateListener(nullptr), cusListener(nullptr)
     {
     }
 
-    int SetListener(IDivListener *divListener, IGateListener *gateListener, IGuider *guider);
+    int SetListener(IDivListener *divListener, IGateListener *gateListener, ICusListener *cusListener);
 
     int SetupMQTT(const char *broker, const int port, void (*callback)(char *, uint8_t *, unsigned int));
 
@@ -93,16 +77,40 @@ public:
 
     void ReadUIMessage(std::string msg);
 
-    // send message to a specific id in the network
-    // TODO - make function/method for selecting topic
-    int SendMessage(Node_t nodeType, int srcId, int destId, int content) const override
+    // send message to all members
+    bool SendMessage(Topic nodeType, int srcId, int content) const override
     {
         const char *topic = "";
 
         // selecting topic
         switch (nodeType)
         {
-        case DIVIDER:
+        case DIVIDER_ROLE:
+            topic = topic_dividers;
+            break;
+        case GATE:
+            topic = topic = topic_gates;
+            break;
+        }
+
+        // 000 to string problem?
+        // sending the message
+        char data[200];
+        sprintf(data, "&%s-%s-%s;", std::to_string(srcId).c_str(), "000", std::to_string(content).c_str());
+        mqttClient->publish(topic, data);
+
+        return true;
+    }
+    // send message to a specific id in the network
+    // TODO - make function/method for selecting topic
+    bool SendMessage(Topic nodeType, int srcId, int destId, int content) const override
+    {
+        const char *topic = "";
+
+        // selecting topic
+        switch (nodeType)
+        {
+        case DIVIDER_ROLE:
             topic = topic_dividers;
             break;
         case GATE:
@@ -110,36 +118,34 @@ public:
             break;
         }
 
+        // sending the message
         char data[200];
         sprintf(data, "&%s-%s-%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str());
         mqttClient->publish(topic, data);
 
-        return 1;
+        return true;
     }
 
-    // send message to all members
-    int SendMessage(Node_t nodeType, int srcId, int content) const override
+    bool SendMessage(Topic nodeType, int srcId, int destId,std::pair<int, int> pairContent) const override
     {
         const char *topic = "";
 
         // selecting topic
         switch (nodeType)
         {
-        case DIVIDER:
+        case DIVIDER_ROLE:
             topic = topic_dividers;
             break;
         case GATE:
             topic = topic = topic_gates;
-
             break;
         }
 
         char data[200];
-        // 000 to string problem?
-        sprintf(data, "&%s-%s-%s;", std::to_string(srcId).c_str(), "000", std::to_string(content).c_str());
+        sprintf(data, "&%s-%s-%s:%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(pairContent.first).c_str());
         mqttClient->publish(topic, data);
 
-        return 1;
+        return true;
     }
 
     static bool ConnectWiFi(WiFiClient *wifi)
@@ -172,8 +178,8 @@ private:
 
     void HandleUIMessage(UIMessage msgCode, int data);
 
-    // extract the id from the message
-    // TODO:
+    char* SelectTopic(Topic topic);
+
     static std::string ExtractContent(CONTENT_TYPE type, std::string msg)
     {
         int contentPosition = type;

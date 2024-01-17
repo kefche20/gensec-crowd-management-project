@@ -1,6 +1,6 @@
 #include "Messager.hpp"
 
-int Messager::SetListener(IDivListener *divListener, IGateListener *gateListener, IGuider *guider)
+int Messager::SetListener(IDivListener *divListener, IGateListener *gateListener, ICusListener *guider)
 {
     if (divListener == nullptr)
     {
@@ -9,7 +9,7 @@ int Messager::SetListener(IDivListener *divListener, IGateListener *gateListener
 
     this->divListener = divListener;
     this->gateListener = gateListener;
-    this->guider = guider;
+    this->cusListener = guider;
 
     return 1;
 }
@@ -107,25 +107,17 @@ void Messager::HandleBoardcastMessage(int srcId, DividerBoardcastMessage msgCode
     switch (msgCode)
     {
     case DISCOVER:
-        divListener->HandleNewDivider(srcId);
-
+        divListener->HandleNewMember(srcId);
         break;
+
     case NEW_LEADER:
-        divListener->HandleRoleChanging(srcId, LEADER);
-
+        divListener->HandleNewLeader(srcId);
         break;
-    case NEW_MEMBER:
-        divListener->HandleRoleChanging(srcId, MEMBER);
 
-        break;
     case LEADER_ALIVE:
-        divListener->HandleLeaderAlive(srcId, hrtbt::ALIVE);
-
+        divListener->HandleLeaderAlive(srcId);
         break;
-    case LEADER_DEAD:
-        divListener->HandleLeaderAlive(srcId, hrtbt::DEAD);
 
-        break;
     default:
         // handle unvalid message
         break;
@@ -206,7 +198,7 @@ void Messager::ReadUIMessage(std::string msg)
         return;
     }
 
-    // recieved id - UI won't need specific src id 
+    // recieved id - UI won't need specific src id
     int desId = -1;
     int msgCode = -1;
     int data = -1;
@@ -216,22 +208,38 @@ void Messager::ReadUIMessage(std::string msg)
     msgCode = std::stoi(ExtractContent(MSG, msg));
     data = std::stoi(ExtractContent(DATA, msg));
 
-   //FIXME - get the id from the customer guider 
-    if(desId != divListener->GetId())
+    // FIXME - get the id from the customer guider
+    if (desId != divListener->GetId())
     {
-        HandleUIMessage((UIMessage)msgCode,data);
+        HandleUIMessage((UIMessage)msgCode, data);
     }
 }
 
 void Messager::HandleUIMessage(UIMessage msgCode, int data)
 {
-
     switch (msgCode)
     {
     case CHECK_IN:
-        guider->HandleCustomerCheckIn(data);
+        cusListener->HandleCustomerRequest(true);
         break;
+
+    case ACK:
+        cusListener->HandleCustomerRequest(false);
     default:
+        break;
+    }
+}
+
+
+char* SelectTopic(Topic topic)
+{
+    switch(topic)
+    {
+        case UI:
+        break;
+        case DIVIDER_ROLE:
+        break;
+        case DIVIDER_ALIVE:
         break;
     }
 }

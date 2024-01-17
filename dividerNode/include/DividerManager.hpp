@@ -9,177 +9,103 @@
 #include "Timer.hpp"
 #include "Divider.hpp"
 
-#include "IDivListener.hpp"
+#include "queue"
+
+#include "DividerDataProcessor.hpp"
+
 #include "ISender.hpp"
-
-struct Role
-{
-    RoleMode mode;
-    RoleMode preMode;
-    bool isAssignedMember;
-
-    Role() : mode(IDLE), preMode(VOID), isAssignedMember(false)
-    {
-    }
-
-    void SetAssignedMember(bool sta)
-    {
-        isAssignedMember = sta;
-    }
-
-    bool IsAssignedMember()
-    {
-        return isAssignedMember;
-    }
-
-    bool IsNewMode()
-    {
-        return mode != preMode;
-    }
-
-    void UpdateMode(RoleMode newMode)
-    {
-        mode = newMode;
-    }
-
-    void ClearEntryFlag()
-    {
-        preMode = mode;
-    }
-
-    static int RoleToInt(RoleMode role)
-    {
-        switch (role)
-        {
-        case LEADER:
-            return FELLOW_LEADER;
-            break;
-        case MEMBER:
-            return FELLOW_MEMBER;
-            break;
-        default:
-            return FELLOW_MEMBER;
-        }
-    }
-};
-
+#include "IDataCollector.hpp"
 /*
-    1. remove the divider when one is dead
-    2.
+    //REVIEW
+     1. member send heartbeat
+     2. leader store data
+
+    0. check using exception for error proof
+    1. redesign to OOP programming style - inheritant
+
 */
-class DividerManager : IDivListener
+
+class DividerManager : public IDivListener, public INodeManager, public IRemoteDataCollector
 {
 private:
     int id;
-    Role role;
-
+    RoleControl role;
     Timer timer;
-    hrtbt::Heartbeat *leaderAlive;
-    ISender *sender;
 
     std::list<Divider> dividers;
+    hrtbt::MetaAliveTracker metaAliveTracker;
+
+    // interface with messager and
+    ISender *sender;
+    IDataCollector *localCollector;
 
 public:
-    DividerManager(int id, hrtbt::Heartbeat *leaderAlive) : id(id), leaderAlive(leaderAlive), sender(nullptr)
-    {
-        timer.SetInterval(WAIT_INTERVAL);
-    }
+    DividerManager(int id);
 
-    void SetSender(ISender *sender);
+    bool SetSender(ISender *sender);
+
+    bool SetLocalCollector(IDataCollector *locaCollector);
+
+    std::pair<int, int> GetLeastBusyGate() override;
+
+    int GetId() override;
+
+    RoleMode GetRoleMode() override;
+
+    bool Add(int id) override;
+
+    bool Remove(int id) override;
 
     // divider request based on role
     void dividersChat();
 
     // divider response
 
-    int GetId() override
-    {
-        return id;
-    }
-    // handle message: DISCOVER
-    void HandleNewDivider(int newDividerId) override
-    {
-        if (JustifyMember(newDividerId))
-        {
-            SetDividerRole(newDividerId, false);                                        // record new member with id & role
-            sender->SendMessage(DIVIDER, id, newDividerId, Role::RoleToInt(role.mode)); // introduce its role to new members
-        }
-        else
-        {
-            //  sender->SendMessage(DIVIDER, id, "DISQUALIFY");
-        }
-    }
+    // TOPIC: Roles
+    // handle message: FELLOW_MEMBER + FELLOW_LEADER
+    void HandleDiscoverResult(int dividerId, RoleMode dividerRole) override;
+
+    //  handle message: DISCOVER
+    void HandleNewMember(int newDividerId) override;
 
     // handle message: NEW_LEADER + NEW_MEMBER
-    void HandleRoleChanging(int dividerId, RoleMode newRole) override
-    {
-        switch (newRole)
-        {
-        case MEMBER:
-            // oke my brother! member!
-            SetDividerRole(dividerId, false);
-            break;
-        case LEADER:
-            if (JustifyLeader(dividerId))
-            // accept new leader & become member!
-            {
-                SetDividerRole(dividerId, true);
-                role.SetAssignedMember(true);
-            }
-            else
-            // no! get back to be a member!
-            {
-                sender->SendMessage(DIVIDER, id, dividerId, Role::RoleToInt(role.mode));
-            }
-            break;
-        }
-    }
+    void HandleNewLeader(int dividerId) override;
 
-    // handle message: LEADER_ALIVE + LEADER_DEADEs
-    void HandleLeaderAlive(int leaderId, hrtbt::status sta) override
-    {
-        switch (sta)
-        {
-        case hrtbt::ALIVE:
-            leaderAlive->RefreshLastBeat();
-            break;
-        case hrtbt::DEAD:
-            //  RemoveDivider(leaderId);
-            //  role.UpdateMode(NEUTRAL);
-            break;
-        }
-    }
+    // TOPIC: leader alives
+    // handle message: LEADER_ALIVE
+    void HandleLeaderAlive(int leaderId) override;
 
-    // handle message: FELLOW_MEMBER + FELLOW_LEADER
-    void HandleDiscoverResult(int dividerId, RoleMode dividerRole) override
-    {
-
-        switch (dividerRole)
-        {
-        case MEMBER:
-            SetDividerRole(dividerId, false);
-            break;
-        case LEADER:
-
-            SetDividerRole(dividerId, true);
-            role.SetAssignedMember(true);
-            break;
-        }
-    }
+    // TOPIC: member alives
+    // handle message: MEMBER_ALIVE+RATE
+    void HandleMemberAlive(int memId, std::pair<int, int>) override;
 
 private:
-    // handling divider communications
+    // check if the member has the same id or not
     bool JustifyMember(int memberId);
 
+    // check if the leader
     bool JustifyLeader(int leaderId);
 
-    void SetDividerRole(int id, bool isLeader);
-
-    void RemoveDivider(int id);
-
-    void RemoveLeader();
+    int SearchLeaderId();
 
     int IsNextLeader();
+
+    bool IsMemberExist(int checkId);
+
+    bool SetDividerRole(int id, RoleMode isLeader);
 };
+
+// int DividerManager::SearchLeaderId()
+// {
+//     // find the divider with the corresponding id
+//     auto divider = std::find_if(dividers.begin(), dividers.end(), IsLeader);
+
+//     if (divider != dividers.end())
+//     {
+//         return-1;
+//     }
+
+//    return divider->GetId();
+// }
 
 #endif

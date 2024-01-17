@@ -1,9 +1,8 @@
 #include "GateManager.hpp"
 #include "MessageContent.hpp"
 
-GateManager::GateManager(int maxGateNum, int openThreshold, int closeThreshold, ISender *sender) : maxGateNum(maxGateNum), openThreshold(openThreshold), closeThreshold(closeThreshold), generalState(ALL_FREE), sender(sender), id(100)
+GateManager::GateManager(int maxGateNum, int openThreshold, int closeThreshold, ISender *sender) : maxGateNum(maxGateNum), openThreshold(openThreshold), closeThreshold(closeThreshold), generalState(ALL_FREE), sender(sender), id(100), metaAliveTracker(10, this)
 {
-    gateMetaTracker = new hrtbt::MetaTracker(10, this);
 }
 
 void GateManager::SetGateState(int gateId, bool sta)
@@ -18,6 +17,64 @@ void GateManager::SetGateState(int gateId, bool sta)
     {
         // handle
     }
+}
+
+std::pair<int, int> GateManager::GetLeastBusyGate()
+{
+    std::pair<int, int> leastBusyGate;
+    leastBusyGate.first = -1;  // first is id
+    leastBusyGate.second = 0; // second is busyRate
+
+    for (auto &gate : gates)
+    {
+        if (gate.GetBusyRate() < leastBusyGate.second && gate.GetOpenSta())
+        // update the id and rate of the gate with lower busy rate
+        {
+            leastBusyGate.first = gate.GetId();
+            leastBusyGate.second = gate.GetBusyRate();
+        }
+    }
+
+    return leastBusyGate;
+}
+
+bool GateManager::Add(int id)
+{
+    if (gates.size() >= maxGateNum)
+    // cancel if gate number is exceed the max number
+    {
+        return false;
+    }
+
+    bool sta = false;
+    auto result = std::find(gates.begin(), gates.end(), id);
+
+    if (result == gates.end())
+    // add the gate and heart of gate to keep track on its alive
+    {
+        gates.push_back(Gate(id));
+        metaAliveTracker.Add(id);
+        sta = true;
+    }
+
+    return sta;
+}
+
+bool GateManager::Remove(int id)
+// remove function is automatically called from the gate alive tracker if the gate is dead
+{
+    bool sta = false;
+
+    auto gate = std::find(gates.begin(), gates.end(), id);
+
+    if (gate != gates.end())
+    // only remove when gate is exist
+    {
+        gates.remove(*gate);
+        sta = true;
+    }
+
+    return sta;
 }
 
 void GateManager::addPersonToGate(int gateId, int numOfPeople)
@@ -50,7 +107,7 @@ void GateManager::allocatePersonToGate()
   //TODO -
    2. check send msg for open and close
 */
-void GateManager::GateOpenCloseLogic()
+void GateManager::GateChats()
 {
     switch (traffic.state)
     {
@@ -134,7 +191,7 @@ void GateManager::GateOpenCloseLogic()
         if (GetActiveGate() > 1)
         {
             int closeGateId = closeAnIdleGate();
-            sender->SendMessage(GATE,this->id,closeGateId,CLOSEGATE);
+            sender->SendMessage(GATE, this->id, closeGateId, CLOSEGATE);
         }
         else
         {
@@ -151,6 +208,28 @@ void GateManager::GateOpenCloseLogic()
     default:
 
         break;
+    }
+}
+
+void GateManager::HandleGateRegister(int id)
+{
+    // add new gate to list
+    Add(id);
+}
+
+void GateManager::HandleGateDataBeats(int gateId, int numOfPeople)
+{
+
+    auto gate = std::find(gates.begin(), gates.end(), gateId);
+
+    if (gate != gates.end())
+    {
+        gate->refreshCount(numOfPeople);
+        metaAliveTracker.UpdateNewBeat(gateId);
+    }
+    else
+    {
+        // no id found
     }
 }
 
