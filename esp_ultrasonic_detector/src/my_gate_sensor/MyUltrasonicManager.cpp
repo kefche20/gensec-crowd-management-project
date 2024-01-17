@@ -1,4 +1,4 @@
-#include "..\include\my_gate_sensor\MyUltrasonicSensor.hpp"
+#include "..\include\my_gate_sensor\headers\MyUltrasonicSensor.hpp"
 
 MyUltrasonicSensor::MyUltrasonicSensor(uint8_t my_echo_pin, uint8_t my_trigger_pin)
 {
@@ -7,4 +7,9 @@ MyUltrasonicSensor::MyUltrasonicSensor(uint8_t my_echo_pin, uint8_t my_trigger_p
 
     pinMode(echo_pin, INPUT);
     pinMode(trigger_pin, OUTPUT);
+}
+
+MyUltrasonicSensor::~MyUltrasonicSensor()
+{
+    ;
 }

@@ -2,7 +2,7 @@
 
 #include "..\include\entryDetector.hpp"
 
-class IMyUpdateDetector
+class IMySensorOperator
 {
 public:
     virtual void updateMyDetectorState() = 0;

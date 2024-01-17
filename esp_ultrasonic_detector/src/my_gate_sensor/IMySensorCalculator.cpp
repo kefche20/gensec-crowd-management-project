@@ -1,4 +1,4 @@
-#include "..\include\my_gate_sensor\MyUltrasonicSensor.hpp"
+#include "..\include\my_gate_sensor\headers\MyUltrasonicSensor.hpp"
 
 float MyUltrasonicSensor::findDistance()
 {
