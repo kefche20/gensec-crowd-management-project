@@ -3,13 +3,13 @@
 
 
 #include <utility>
- #include "DividerDataProcessor.hpp"
+#include "DividerDataProcessor.hpp"
 
-//interface of getting the data from the local gate managment
+//interface of getting the data from the local gate management
 class IDataCollector
 {
     public:
-    virtual std::pair<int,int> GetLeastBusyGate() = 0;   //return the information of gate id and number of people
+    virtual std::pair<int,int> GetLeastBusyGate() = 0;   //return the pair value of the gate ID and the least busy rate
 
 };
 

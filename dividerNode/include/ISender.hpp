@@ -6,13 +6,13 @@
 #include "MessageContent.hpp"
 
 /*
- ISender interface allows the Divider send the messages by using the functions of the Messager class
+ ISender interface allows the Divider to send messages by using the functions of the Messager class
 */
 class ISender
 {
 public:
-    // send message on some specific topic
-    // virtual bool SendMessage();
+    //send message on specific topics
+    //virtual bool SendMessage();
 
     // send boardcast
     virtual bool SendMessage(Topic nodeType, int SrcId, int content) = 0;

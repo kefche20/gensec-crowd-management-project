@@ -22,7 +22,6 @@ void CustomerManager::ResponseGuidingRequest()
     case WAITING_REQUEST:
         if (control.IsNewState())
         {
-
             control.Refresh();
         }
 
@@ -40,7 +39,7 @@ void CustomerManager::ResponseGuidingRequest()
             control.Refresh();
         }
 
-        if (GetLeastBusyGateId() != ERROR)
+        if (leastBusyGateId != ERROR)
         // FIXME - response to request from UI
         {
             //  sender->SendMessage(UI, leastBusyGateId);

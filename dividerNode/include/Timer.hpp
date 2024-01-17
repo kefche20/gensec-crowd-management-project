@@ -3,11 +3,6 @@
 
 #include <arduino.h>
 
-//TODO 
-/*
-- timer a struct or a class 
-- SetInterval by function or operator
-*/
 class Timer
 {
 private:

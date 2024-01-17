@@ -55,10 +55,10 @@ namespace hrtbt
     int beatId;
     Heartbeat heartbeat;
 
-    // the meta watching over the node alive tracker, which do two things: checking beatId from the queue and remove the node tracker if it's dead
+    // the meta watches over the node-alive tracker, which does two things: check heartbeatId from the queue and remove the node tracker if node is dead
     IAliveManager *meta;
 
-    // real-time task, which handles the creation and delete the beatTrackingTask
+    // real-time task, which handles the creation and deletion of the beatTrackingTask
     TaskHandle_t trackingHandler;
 
   public:
@@ -94,7 +94,7 @@ namespace hrtbt
     // remove all node's tracker form the list 
     void RemoveAll();
 
-    // update/ add new beat id to the beats queue
+    // update add new beat id to the beats queue
     void UpdateNewBeat(int id);
 
     // check if the latest beat id is as the indicated id
