@@ -7,7 +7,7 @@ static const int MAX_GATES = 3;
 
 // TODO: find a solution to store the topics temporary
 static const char *topic_gates = "gates";
-static const char *topic_dividers = "dividers";
+static const char *topic_dividers_role = "dividers";
 static const char *topic_dividers_alive = "dividerAlives";
 
 static const char *topic_ui = "ui";

@@ -69,6 +69,39 @@ void Messager::MqttLoop()
     mqttClient->loop();
 }
 
+bool Messager::SendMessage(Topic topic, int srcId, int content)
+{
+    const char *selectTopic = "default";
+    selectTopic = SelectTopic(topic);
+
+    char data[200];
+    sprintf(data, "%s-%s-%s;", std::to_string(srcId).c_str(), "000", std::to_string(content).c_str());
+    mqttClient->publish(selectTopic, data);
+
+    return true;
+}
+
+bool Messager::SendMessage(Topic topic, int srcId, int destId, int content)
+{
+    const char *selectTopic = "default";
+    selectTopic = SelectTopic(topic);
+
+    char data[200];
+    sprintf(data, "&%s-%s-%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str());
+
+    return true;
+}
+
+bool Messager::SendMessage(Topic topic, int srcId, int destId, std::pair<int, int> pairContent)
+{
+    const char *selectTopic = "default";
+    selectTopic = SelectTopic(topic);
+
+    char data[200];
+    sprintf(data, "&%s-%s-%s:%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(pairContent.first).c_str(), std::to_string(pairContent.first).c_str());
+    mqttClient->publish(selectTopic, data);
+}
+
 void Messager::ReadDividerMessage(std::string msg)
 {
 
@@ -100,6 +133,27 @@ void Messager::ReadDividerMessage(std::string msg)
     {
         HandleDirectMessage(srcId, (DividerDirectMessage)msgCode);
     }
+}
+
+ bool Messager::ConnectWiFi(WiFiClient *wifi)
+{
+    if (wifi == nullptr)
+    {
+        return false;
+    }
+    Serial.print("Connecting to ");
+
+    WiFi.begin(ssid, password);
+    Serial.println(ssid);
+
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        Serial.print(".");
+        delay(500);
+    }
+
+    Serial.print("Connected.");
+    return true;
 }
 
 void Messager::HandleBoardcastMessage(int srcId, DividerBoardcastMessage msgCode)
@@ -230,16 +284,18 @@ void Messager::HandleUIMessage(UIMessage msgCode, int data)
     }
 }
 
-
-char* SelectTopic(Topic topic)
+const char *Messager::SelectTopic(Topic topic)
 {
-    switch(topic)
+    switch (topic)
     {
-        case UI:
+    case UI:
+        return topic_ui;
         break;
-        case DIVIDER_ROLE:
+    case DIVIDER_ROLE:
+        return topic_dividers_role;
         break;
-        case DIVIDER_ALIVE:
+    case DIVIDER_ALIVE:
+        return topic_dividers_alive;
         break;
     }
 }

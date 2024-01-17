@@ -28,7 +28,7 @@ WiFiClient espClient;
 hrtbt::Heartbeat leaderAlive(BEATRATE, MAXOFFSET);
 
 Messager messager(&espClient);
- DividerManager dividerManager(DIVIDER_ID);
+DividerManager dividerManager(DIVIDER_ID);
 
 void callback(char *topic, uint8_t *payload, unsigned int length);
 
@@ -36,26 +36,27 @@ void setup()
 {
   Serial.begin(9600);
 
-
   //  messager.SetListener((IDivListener*)&dividerManager);   // TODO add listeners here
   // dividerManager.SetSender((ISender*)&messager);
 
   // //network connection
-   Messager::ConnectWiFi(&espClient);
-   messager.SetupMQTT(mqtt_broker,mqtt_port,callback);
-   messager.ConnectBroker();
+  Messager::ConnectWiFi(&espClient);
+  messager.SetupMQTT(mqtt_broker, mqtt_port, callback);
+  messager.ConnectBroker();
 
   // //topic subscription
-   messager.ConnectTopic(topic_dividers);
-   messager.ConnectTopic(topic_gates);
+  messager.ConnectTopic(topic_dividers_role);
+  messager.ConnectTopic(topic_dividers_alive);
+
+  messager.ConnectTopic(topic_gates);
 }
 
 void loop()
 {
- //Serial.println("hahha");
-  //dividerManager.dividersChat();
-  // messager.MqttLoop();
-  //mqttClient->loop();
+  // Serial.println("hahha");
+  // dividerManager.dividersChat();
+  //  messager.MqttLoop();
+  // mqttClient->loop();
 }
 
 // handle the message coming from the networks
@@ -77,11 +78,10 @@ void callback(char *topic, uint8_t *payload, unsigned int length)
 
   // TODO: check create new topic gate with id
   // seperate read message through topic
-  if (topic == topic_dividers)
+  if (topic == topic_dividers_role)
   {
     // read gate divider message
-    //messager.ReadDividerMessage(msg);
-
+    // messager.ReadDividerMessage(msg);
   }
   else if (topic == topic_gates)
   {
@@ -91,7 +91,6 @@ void callback(char *topic, uint8_t *payload, unsigned int length)
   {
     // read message form the ui
   }
-
 
   Serial.print("\n\n");
 }

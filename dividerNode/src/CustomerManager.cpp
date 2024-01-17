@@ -49,6 +49,7 @@ void CustomerManager::ResponseGuidingRequest()
         // request done
         if (!isRequested)
         {
+            //adding the number of people to the corresponding gate 
             control.UpdateState(WAITING_REQUEST);
         }
 

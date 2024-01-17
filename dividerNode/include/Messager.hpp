@@ -78,96 +78,15 @@ public:
     void ReadUIMessage(std::string msg);
 
     // send message to all members
-    bool SendMessage(Topic nodeType, int srcId, int content) const override
-    {
-        const char *topic = "";
+    bool SendMessage(Topic topic, int srcId, int content)  override;
 
-        // selecting topic
-        switch (nodeType)
-        {
-        case DIVIDER_ROLE:
-            topic = topic_dividers;
-            break;
-        case GATE:
-            topic = topic = topic_gates;
-            break;
-        }
-
-        // 000 to string problem?
-        // sending the message
-        char data[200];
-        sprintf(data, "&%s-%s-%s;", std::to_string(srcId).c_str(), "000", std::to_string(content).c_str());
-        mqttClient->publish(topic, data);
-
-        return true;
-    }
-    // send message to a specific id in the network
     // TODO - make function/method for selecting topic
-    bool SendMessage(Topic nodeType, int srcId, int destId, int content) const override
-    {
-        const char *topic = "";
+    bool SendMessage(Topic topic, int srcId, int destId, int content)  override;
 
-        // selecting topic
-        switch (nodeType)
-        {
-        case DIVIDER_ROLE:
-            topic = topic_dividers;
-            break;
-        case GATE:
-            topic = topic_gates;
-            break;
-        }
+    bool SendMessage(Topic topic, int srcId, int destId,std::pair<int, int> pairContent) override;
 
-        // sending the message
-        char data[200];
-        sprintf(data, "&%s-%s-%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str());
-        mqttClient->publish(topic, data);
-
-        return true;
-    }
-
-    bool SendMessage(Topic nodeType, int srcId, int destId,std::pair<int, int> pairContent) const override
-    {
-        const char *topic = "";
-
-        // selecting topic
-        switch (nodeType)
-        {
-        case DIVIDER_ROLE:
-            topic = topic_dividers;
-            break;
-        case GATE:
-            topic = topic = topic_gates;
-            break;
-        }
-
-        char data[200];
-        sprintf(data, "&%s-%s-%s:%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(pairContent.first).c_str());
-        mqttClient->publish(topic, data);
-
-        return true;
-    }
-
-    static bool ConnectWiFi(WiFiClient *wifi)
-    {
-        if (wifi == nullptr)
-        {
-            return false;
-        }
-        Serial.print("Connecting to ");
-
-        WiFi.begin(ssid, password);
-        Serial.println(ssid);
-
-        while (WiFi.status() != WL_CONNECTED)
-        {
-            Serial.print(".");
-            delay(500);
-        }
-
-        Serial.print("Connected.");
-        return true;
-    }
+    static bool ConnectWiFi(WiFiClient *wifi);
+   
 
 private:
     void HandleBoardcastMessage(int srcId, DividerBoardcastMessage msgCode);
@@ -178,7 +97,7 @@ private:
 
     void HandleUIMessage(UIMessage msgCode, int data);
 
-    char* SelectTopic(Topic topic);
+    const char* SelectTopic(Topic topic);
 
     static std::string ExtractContent(CONTENT_TYPE type, std::string msg)
     {
