@@ -5,12 +5,13 @@
 
 #include "DividerManager.hpp"
 #include "GateManager.hpp"
+#include "CustomerManager.hpp"
 #include "Messager.hpp"
 
 #include <string>
 
 // Divider
-#define DIVIDER_ID 300
+#define DIVIDER_ID 100
 
 // Heartbeat
 #define BEATRATE 5000
@@ -22,13 +23,20 @@
 #define TOPIC_GATES 0
 #define TOPIC_DIVIDERS 1
 
+// free rate to open or close a gate
+#define OPEN_THRESHOLD_RATE 20
+#define CLOSE_THRESHOLD_RATE 80
+
 WiFiClient espClient;
 // PubSubClient *mqttClient = new PubSubClient(espClient);
 
 hrtbt::Heartbeat leaderAlive(BEATRATE, MAXOFFSET);
 
+// messager and managers intialisation
 Messager messager(&espClient);
- DividerManager dividerManager(DIVIDER_ID);
+DividerManager dividerManager(DIVIDER_ID);
+GateManager gateManager(MAX_GATES, OPEN_THRESHOLD_RATE, CLOSE_THRESHOLD_RATE);
+CustomerManager customerManager((IDataCollector *)&gateManager, (IRemoteDataCollector *)&dividerManager);
 
 void callback(char *topic, uint8_t *payload, unsigned int length);
 
@@ -36,26 +44,28 @@ void setup()
 {
   Serial.begin(9600);
 
-
-  //  messager.SetListener((IDivListener*)&dividerManager);   // TODO add listeners here
-  // dividerManager.SetSender((ISender*)&messager);
+  // interface between manager classes and messagers
+  messager.SetListener((IDivListener *)&dividerManager, (IGateListener *)&gateManager, (ICusListener *)&customerManager); // TODO add listeners here
+  dividerManager.SetSender((ISender *)&messager);
+  dividerManager.SetLocalCollector((IDataCollector *)&gateManager);
+  gateManager.SetSender((ISender *)&messager);
 
   // //network connection
-   Messager::ConnectWiFi(&espClient);
-   messager.SetupMQTT(mqtt_broker,mqtt_port,callback);
-   messager.ConnectBroker();
+  Messager::ConnectWiFi(&espClient);
+  messager.SetupMQTT(mqtt_broker, mqtt_port, callback);
+  messager.ConnectBroker();
 
-  // //topic subscription
-   messager.ConnectTopic(topic_dividers);
-   messager.ConnectTopic(topic_gates);
+  // //topic subscriptions
+  messager.ConnectTopic(topic_dividers_role);
+  messager.ConnectTopic(topic_dividers_alive);
+  messager.ConnectTopic(topic_gates);
 }
 
 void loop()
 {
- //Serial.println("hahha");
-  //dividerManager.dividersChat();
-  // messager.MqttLoop();
-  //mqttClient->loop();
+
+  dividerManager.dividersChat();
+  messager.MqttLoop();
 }
 
 // handle the message coming from the networks
@@ -77,13 +87,17 @@ void callback(char *topic, uint8_t *payload, unsigned int length)
 
   // TODO: check create new topic gate with id
   // seperate read message through topic
-  if (topic == topic_dividers)
+  if (strcmp(topic, topic_dividers_role) == 0)
   {
     // read gate divider message
-    //messager.ReadDividerMessage(msg);
-
+    messager.ReadDividerRoleMessage(msg);
   }
-  else if (topic == topic_gates)
+  else if (strcmp(topic, topic_dividers_alive) == 0)
+  {
+    // read gate divider message
+    messager.ReadDividerAliveMessage(msg);
+  }
+  else if (strcmp(topic, topic_gates) == 0)
   {
     // read the gate message
   }
@@ -91,7 +105,6 @@ void callback(char *topic, uint8_t *payload, unsigned int length)
   {
     // read message form the ui
   }
-
 
   Serial.print("\n\n");
 }

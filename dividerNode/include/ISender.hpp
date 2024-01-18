@@ -5,21 +5,21 @@
 #include <utility>
 #include "MessageContent.hpp"
 
-
 /*
- ISender interface allows the Divider send the messages by using the functions of the Messager class
+ ISender interface allows the Divider to send messages by using the functions of the Messager class
 */
 class ISender
 {
 public:
-    //send message on some specific topic
-    //virtual bool SendMessage();
+    // send message on specific topics
+    // virtual bool SendMessage();
 
-    // send boardcast message
-    virtual bool SendMessage(Topic nodeType, int SrcId, int content) const = 0;
+    // send boardcast
+    virtual bool SendMessage(Topic nodeType, int SrcId, int content) = 0;
 
     // send to a specific id
-    virtual bool SendMessage(Topic nodeType, int SrcId, int destId, int content) const = 0;
-    virtual bool SendMessage(Topic nodeType, int srcId, int destId, std::pair<int, int> pairContent) const = 0;
+    virtual bool SendMessage(Topic nodeType, int SrcId, int destId, int content) = 0;
+    virtual bool SendMessage(Topic nodeType, int srcId, int destId, int content, int data) = 0;
+    virtual bool SendMessage(Topic nodeType, int srcId, int destId, int content, std::pair<int, int> pairData) = 0;
 };
 #endif

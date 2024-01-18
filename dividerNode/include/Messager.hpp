@@ -20,9 +20,6 @@
 #include "ICusListener.hpp"
 #include "ISender.hpp"
 
-
-
-
 const int MQTT_PORT = 1883;
 
 /*
@@ -71,103 +68,25 @@ public:
 
     void MqttLoop();
     // perform logic of dealing with message
-    void ReadDividerMessage(std::string msg);
+    void ReadDividerRoleMessage(std::string msg);
+
+    void ReadDividerAliveMessage(std::string msg);
 
     void ReadGateMessage(std::string msg);
 
     void ReadUIMessage(std::string msg);
 
     // send message to all members
-    bool SendMessage(Topic nodeType, int srcId, int content) const override
-    {
-        const char *topic = "";
+    bool SendMessage(Topic topic, int srcId, int content) override;
 
-        // selecting topic
-        switch (nodeType)
-        {
-        case DIVIDER_ROLE:
-            topic = topic_dividers;
-            break;
-        case GATE:
-            topic = topic = topic_gates;
-            break;
-        }
-
-        // 000 to string problem?
-        // sending the message
-        char data[200];
-        sprintf(data, "&%s-%s-%s;", std::to_string(srcId).c_str(), "000", std::to_string(content).c_str());
-        mqttClient->publish(topic, data);
-
-        return true;
-    }
-    // send message to a specific id in the network
     // TODO - make function/method for selecting topic
-    bool SendMessage(Topic nodeType, int srcId, int destId, int content) const override
-    {
-        const char *topic = "";
+    bool SendMessage(Topic topic, int srcId, int destId, int content) override;
 
-        // selecting topic
-        switch (nodeType)
-        {
-        case DIVIDER_ROLE:
-            topic = topic_dividers;
-            break;
-        case GATE:
-            topic = topic_gates;
-            break;
-        }
+    bool SendMessage(Topic topic, int srcId, int destId, int content, int data) override;
 
-        // sending the message
-        char data[200];
-        sprintf(data, "&%s-%s-%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str());
-        mqttClient->publish(topic, data);
+    bool SendMessage(Topic topic, int srcId, int destId, int content, std::pair<int, int> pairContent) override;
 
-        return true;
-    }
-
-    bool SendMessage(Topic nodeType, int srcId, int destId,std::pair<int, int> pairContent) const override
-    {
-        const char *topic = "";
-
-        // selecting topic
-        switch (nodeType)
-        {
-        case DIVIDER_ROLE:
-            topic = topic_dividers;
-            break;
-        case GATE:
-            topic = topic = topic_gates;
-            break;
-        }
-
-        char data[200];
-        sprintf(data, "&%s-%s-%s:%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(pairContent.first).c_str());
-        mqttClient->publish(topic, data);
-
-        return true;
-    }
-
-    static bool ConnectWiFi(WiFiClient *wifi)
-    {
-        if (wifi == nullptr)
-        {
-            return false;
-        }
-        Serial.print("Connecting to ");
-
-        WiFi.begin(ssid, password);
-        Serial.println(ssid);
-
-        while (WiFi.status() != WL_CONNECTED)
-        {
-            Serial.print(".");
-            delay(500);
-        }
-
-        Serial.print("Connected.");
-        return true;
-    }
+    static bool ConnectWiFi(WiFiClient *wifi);
 
 private:
     void HandleBoardcastMessage(int srcId, DividerBoardcastMessage msgCode);
@@ -178,36 +97,57 @@ private:
 
     void HandleUIMessage(UIMessage msgCode, int data);
 
-    char* SelectTopic(Topic topic);
+    const char *SelectTopic(Topic topic);
 
     static std::string ExtractContent(CONTENT_TYPE type, std::string msg)
+    // REVIEW - check improve extract content + send message function
     {
-        int contentPosition = type;
-        int readLength;
+        int startPos = 0;
+        int endPos = 0;
+        int readLen = 0;
+
         switch (type)
         {
-        case MSG:
-            readLength = MSG_LENGTH;
-            break;
-        case DATA:
-            readLength = DATA_LENGTH;
-            break;
         case SRC_ID:
-        case DES_ID:
-            readLength = ID_LENGTH;
+            startPos = 1;
+            readLen = ID_LENGTH;
             break;
+        case DES_ID:
+            startPos = msg.find('>') + 1;
+            readLen = ID_LENGTH;
+            break;
+        case MSG:
+            startPos = msg.find('-') + 1;
+            readLen = MSG_LENGTH;
+            break;
+        case DATA1:
+            // data 1 is the gate id: always go afte '+'
+            startPos = msg.find('+') + 1;
+            endPos = msg.find(':');
+            readLen = endPos - startPos;
+            break;
+        case DATA2:
+            // data 2 is the gate
+            startPos = msg.find(':') + 1;
+            endPos = msg.find(';');
+            readLen = endPos - startPos;
+            break;
+
         default:
             // fail detect conent type
             break;
         }
 
-        return msg.substr(contentPosition, readLength);
+        return msg.substr(startPos, readLen);
     }
 
     static bool IsMsgVaid(std::string msg)
     {
         char f_letter = msg.front();
         char l_letter = msg.back();
+
+        // Serial.println(f_letter);
+        // Serial.println(l_letter)
 
         return f_letter == '&' && l_letter == ';';
     }

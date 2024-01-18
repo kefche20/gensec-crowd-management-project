@@ -1,4 +1,4 @@
-#include "CutomerManager.hpp"
+#include "CustomerManager.hpp"
 #define ERROR -1
 
 CustomerManager::CustomerManager(IDataCollector *localCollector, IRemoteDataCollector *remoteCollector) : isRequested(isRequested), control(IDLE_G), localCollector(localCollector), remoteCollector(remoteCollector), leastBusyGateId(0)
@@ -22,7 +22,6 @@ void CustomerManager::ResponseGuidingRequest()
     case WAITING_REQUEST:
         if (control.IsNewState())
         {
-
             control.Refresh();
         }
 
@@ -49,6 +48,7 @@ void CustomerManager::ResponseGuidingRequest()
         // request done
         if (!isRequested)
         {
+            //adding the number of people to the corresponding gate 
             control.UpdateState(WAITING_REQUEST);
         }
 

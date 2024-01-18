@@ -1,8 +1,13 @@
 #include "GateManager.hpp"
 #include "MessageContent.hpp"
 
-GateManager::GateManager(int maxGateNum, int openThreshold, int closeThreshold, ISender *sender) : maxGateNum(maxGateNum), openThreshold(openThreshold), closeThreshold(closeThreshold), generalState(ALL_FREE), sender(sender), id(100), metaAliveTracker(10, this)
+GateManager::GateManager(int maxGateNum, int openThreshold, int closeThreshold) : maxGateNum(maxGateNum), openThresholdRate(openThreshold), closeThresholdRate(closeThreshold), generalState(ALL_FREE),  metaAliveTracker(10, this)
 {
+}
+
+void GateManager::SetSender(ISender* newSender)
+{
+  sender = newSender;
 }
 
 void GateManager::SetGateState(int gateId, bool sta)
@@ -140,13 +145,13 @@ void GateManager::GateChats()
         }
 
         // more gate in duty
-        if (freeSpaceRate > openThreshold && generalState != ALL_IN_DUTY)
+        if (freeSpaceRate < openThresholdRate && generalState != ALL_IN_DUTY)
         {
             traffic.state = CROWD;
         }
 
-        // less gate in duty
-        if (freeSpaceRate < closeThreshold && generalState != ONE_IN_DUTY)
+        //when free space is less than a 
+        if (freeSpaceRate > closeThresholdRate && generalState != ONE_IN_DUTY)
         {
             traffic.state = UNOCCUPIED;
         }
@@ -154,6 +159,7 @@ void GateManager::GateChats()
     break;
 
     case CROWD:
+    //whenever the gate manager is in this state, another new gate will be open
     {
         if (traffic.IsNewState())
         {
@@ -166,14 +172,14 @@ void GateManager::GateChats()
         // open more gate
         if (openGateId != -1)
         {
-            sender->SendMessage(GATE, this->id, openGateId, OPENGATE);
+            sender->SendMessage(GATE, openGateId, OPENGATE);
         }
         else
         {
             generalState = ALL_IN_DUTY;
         }
 
-        if (GetFreeSpaceRate() < openThreshold || generalState == ALL_IN_DUTY)
+        if (GetFreeSpaceRate() < openThresholdRate || generalState == ALL_IN_DUTY)
         {
             traffic.state = NORMAL;
         }
@@ -181,6 +187,7 @@ void GateManager::GateChats()
         break;
     }
     case UNOCCUPIED:
+    //whenever the gate manager is in this state, an open gate will be close
         if (traffic.IsNewState())
         {
 
@@ -191,7 +198,7 @@ void GateManager::GateChats()
         if (GetActiveGate() > 1)
         {
             int closeGateId = closeAnIdleGate();
-            sender->SendMessage(GATE, this->id, closeGateId, CLOSEGATE);
+            sender->SendMessage(GATE, closeGateId, CLOSEGATE);
         }
         else
         {
@@ -199,7 +206,7 @@ void GateManager::GateChats()
         }
 
         // close gate
-        if (GetFreeSpaceRate() > closeThreshold || generalState == ALL_FREE)
+        if (GetFreeSpaceRate() > closeThresholdRate || generalState == ALL_FREE)
         {
             traffic.state = NORMAL;
         }
@@ -295,118 +302,3 @@ int GateManager::closeAnIdleGate()
     return closeGateId;
 }
 
-//-------------------------------------//
-
-// void GateManager::addGate(int id)
-// {
-
-//     if (gates.size() == MAX_GATES)
-//     {
-//         // TODO:: Throw error when too many gates are registered
-//         return;
-//     }
-//     auto result = gates.emplace(std::make_pair(id, Gate(id)));
-//     if (!result.second)
-//     {
-//         // TODO:: Throw error when gate is already registered
-//         return;
-//     }
-// }
-
-// void GateManager::openGate(int id)
-// {
-//    auto it = gates.find(id);
-
-//    if (it != gates.end())
-//     {
-//         it->second.open();
-//     }
-//     else
-//     {
-//         // Handle the case where the gate does not exist
-//     }
-// }
-
-// void GateManager::closeGate(int id)
-// {
-//     auto it = gates.find(id);
-//     if (it != gates.end())
-//     {
-//         it->second.close();
-//     }
-//     else
-//     {
-//         // Handle the case where the gate does not exist
-//     }
-// }
-
-// void GateManager::addPersonToGate(int id)
-// {
-//     auto it = gates.find(id);
-//     if (it != gates.end())
-//     {
-//         it->second.addPerson();
-//     }
-//     else
-//     {
-//         // Handle the case where the gate does not exist
-//     }
-// }
-
-// void GateManager::openAnIdleGate()
-// {
-//     for (auto &gate : gates)
-//     {
-//         if (gate.second.isOpened() == false)
-//         {
-//             gate.second.open();
-//             break; // Open only one gate at a time
-//         }
-//     }
-// }
-
-// void GateManager::refreshNumOfPeopleInGate(int id, int numOfPeople)
-// {
-//     if (gates.find(id) != gates.end())
-//     {
-//         gates[id].refreshCount(numOfPeople);
-//     }
-//     else
-//     {
-//         // Handle case of non-existing gate
-//     }
-// }
-
-// void GateManager::closeAnIdleGate()
-// {
-//     for (auto &gate : gates)
-//     {
-//         if (gate.second.isOpened() && gate.second.getLineCount() == closeThreshold)
-//         {
-//             gate.second.close();
-//             break; // Close only one gate at a time
-//         }
-//     }
-// }
-
-// //TODO: check the allocatate person to gate function
-// void GateManager::allocatePersonToGate()
-// {
-//     // std::string gateId = findLeastBusyGate();
-//     // if (gateId != "")
-//     // {
-//     //     addPersonToGate(gateId);
-//     // }
-//     // Handle the case when no gate is available or all are busy
-// }
-
-// int GateManager::getLineCount(int id)
-// {
-//     auto it = gates.find(id);
-//     if (it != gates.end())
-//     {
-//         return it->second.getLineCount();
-//     }
-
-//     return -1;
-// }

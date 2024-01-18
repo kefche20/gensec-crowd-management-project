@@ -2,8 +2,7 @@
 #define STATECONTROL_HPP
 
 /*
-   1. how to check newState is invalid 
-
+   1. how to check newState is invalid (typename must be enum!)
 */
 template <typename T>
 class StateControl

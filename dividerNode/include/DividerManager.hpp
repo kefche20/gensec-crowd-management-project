@@ -95,17 +95,4 @@ private:
     bool SetDividerRole(int id, RoleMode isLeader);
 };
 
-// int DividerManager::SearchLeaderId()
-// {
-//     // find the divider with the corresponding id
-//     auto divider = std::find_if(dividers.begin(), dividers.end(), IsLeader);
-
-//     if (divider != dividers.end())
-//     {
-//         return-1;
-//     }
-
-//    return divider->GetId();
-// }
-
 #endif

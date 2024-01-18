@@ -79,11 +79,10 @@ public:
 class GateManager : public IGateListener, public INodeManager, public IDataCollector
 {
 private:
-  int id; // temporary test - id should be in the customer guider
   int maxGateNum;
 
-  int openThreshold;  // Threshold to open a new gate
-  int closeThreshold; // Threshold to close an idle gate
+  int openThresholdRate;  // Threshold to open a new gate
+  int closeThresholdRate; // Threshold to close an idle gate
   std::list<Gate> gates;
 
   GeneralGatesState generalState;
@@ -94,7 +93,9 @@ private:
 
 public:
   // Constructor
-  GateManager(int maxGateNum, int openThreshold, int closeThreshold, ISender *sender);
+  GateManager(int maxGateNum, int openThreshold, int closeThreshold);
+
+  void SetSender(ISender *sender);
 
   // Open the gate with the given ID
   void SetGateState(int id, bool sta);

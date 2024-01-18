@@ -56,7 +56,7 @@ void Divider::SetLeader(RoleMode role)
 bool Divider::UpdateLeastBusyGate(std::pair<int, int> newLeastBusyGate)
 {
     if (leastBusyGate.second > MAX_BUSY_RATE || leastBusyGate.second < MIN_BUSY_RATE)
-    // cancle the updating if the rate is invalid
+    // cancel updating if the rate is invalid
     {
         return false;
     }

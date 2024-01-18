@@ -4,7 +4,7 @@
 class ICusListener
 {
 public:
-    // handlle the request from UI
+    // handle the request from UI
     virtual void HandleCustomerRequest(bool reqSta) = 0;
 };
 

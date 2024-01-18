@@ -22,19 +22,21 @@ enum Topic
 
 enum CONTENT_TYPE
 {
-   SRC_ID = SRC_ID_POS,
-   DES_ID = DES_ID_POS,
-   MSG = MSG_POS,
-   DATA = DATA_POS
+   SRC_ID,
+   DES_ID,
+   MSG,
+   DATA1,
+   DATA2
 };
 
 enum DividerBoardcastMessage
 {
-   DISCOVER,     // 0
-   NEW_LEADER,   // 1
-   NEW_MEMBER,   // 2
-   LEADER_ALIVE, // 3
-   LEADER_DEAD,  // 4
+   DISCOVER,
+   NEW_LEADER,
+   NEW_MEMBER,
+   LEADER_ALIVE,
+   LEADER_DEAD,
+   MEMBER_ALIVE,
 };
 
 enum DividerDirectMessage
