@@ -242,20 +242,22 @@ void Messager::ReadDividerAliveMessage(std::string msg)
     // Serial.println(msgCode);
 
     // join network - make friend - optimize this code
+
     if (srcId == divListener->GetId())
     {
-        return;
+         return;
     }
 
     switch (msgCode)
     {
     case LEADER_ALIVE:
+        
         divListener->HandleLeaderAlive(srcId);
         break;
     case MEMBER_ALIVE:
-    pairData.first = std::stoi(ExtractContent(DATA1, msg));
-    pairData.second = std::stoi(ExtractContent(DATA2,msg));
-    divListener->HandleMemberAlive(srcId,pairData);
+        pairData.first = std::stoi(ExtractContent(DATA1, msg));
+        pairData.second = std::stoi(ExtractContent(DATA2, msg));
+        divListener->HandleMemberAlive(srcId, pairData);
         break;
     }
 }
@@ -278,7 +280,7 @@ void Messager::ReadGateMessage(std::string msg)
     srcId = std::stoi(ExtractContent(SRC_ID, msg));
     desId = std::stoi(ExtractContent(DES_ID, msg));
     msgCode = std::stoi(ExtractContent(MSG, msg));
-   // data = std::stoi(ExtractContent(DATA, msg));
+    // data = std::stoi(ExtractContent(DATA, msg));
 
     // join network - make friend - optimize this code
     // FIXME: change the check id from the customer guider
@@ -323,7 +325,7 @@ void Messager::ReadUIMessage(std::string msg)
     // extra meaningful contents from the payload
     desId = std::stoi(ExtractContent(DES_ID, msg));
     msgCode = std::stoi(ExtractContent(MSG, msg));
-   // data = std::stoi(ExtractContent(DATA, msg));
+    // data = std::stoi(ExtractContent(DATA, msg));
 
     // FIXME - get the id from the customer guider
     if (desId != divListener->GetId())

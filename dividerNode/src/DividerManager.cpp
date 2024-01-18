@@ -297,6 +297,12 @@ void DividerManager::HandleNewLeader(int dividerId)
 
 void DividerManager::HandleLeaderAlive(int leaderId)
 {
+   if(role.GetMode() == LEADER)
+   //cancel handle member alive if currently is a leader 
+   {
+      return;
+   }
+
 
     if (leaderId == SearchLeaderId())
     {
@@ -311,6 +317,12 @@ void DividerManager::HandleLeaderAlive(int leaderId)
 
 void DividerManager::HandleMemberAlive(int memId, std::pair<int, int> data)
 {
+    if(role.GetMode() == MEMBER)
+   //cancel handle member alive if currently is a member 
+    {
+        return;
+    }
+
     // finding the divider with the corresponding id
     auto divider = std::find(dividers.begin(), dividers.end(), memId);
 
