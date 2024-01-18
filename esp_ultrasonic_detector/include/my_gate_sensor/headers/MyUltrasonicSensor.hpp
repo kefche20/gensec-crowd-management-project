@@ -15,5 +15,7 @@ public:
     MyUltrasonicSensor(uint8_t, uint8_t);
     ~MyUltrasonicSensor();
 
+    void setupSensor();
+
     float findDistance() override;
 };

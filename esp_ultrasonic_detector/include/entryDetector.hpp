@@ -1,10 +1,10 @@
 #pragma once
 
-#define TRIGGER_PIN_1 12
-#define ECHO_PIN_1 13
+#define TRIGGER_PIN_1 13
+#define ECHO_PIN_1 12
 
-#define TRIGGER_PIN_2 25
-#define ECHO_PIN_2 26
+#define TRIGGER_PIN_2 26
+#define ECHO_PIN_2 25
 
 #define CLOSE_LED_PIN 15
 #define BUSY_LED_PIN 4
@@ -35,6 +35,7 @@
 #define EMPTY_STRING ""
 
 #define START_CHAR '&'
+#define ARROW_CHAR '>'
 #define SPLIT_CHAR '-'
 #define DATA_CHAR "+"
 #define END_CHAR ';'
@@ -50,7 +51,7 @@
 #define DIV_ID "100"
 
 #define COM_DELAY 1000
-#define HEART_BEAT 5000
+#define HEART_BEAT 100
 #define WIFI_CONNECT_TIMEOUT 10000
 
 #include <Arduino.h>

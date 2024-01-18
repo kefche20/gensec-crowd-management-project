@@ -18,8 +18,8 @@ private:
 
     String message_to_send;
 
-    uint8_t busyState = 0;
-    uint8_t openState = 0;
+    uint8_t busy_state;
+    uint8_t open_state;
 
     float first_catch_val;
     float second_catch_val;
@@ -29,6 +29,18 @@ private:
     MyUltrasonicSensor ultrasonic2;
 
     void decreaseQueue();
+    void readInputSourceAndDestination(String);
+    void readCommandAndValue(String);
+
+    void operateQueue();
+
+    bool addQueueNr();
+
+    void checkIfOpen();
+    void checkIfBusy();
+
+    void updateMyDetectorState() override;
+
 public:
     MyGateSystemManager();
     ~MyGateSystemManager();
@@ -39,13 +51,5 @@ public:
     int getQueueNr();
     uint8_t getGateState();
 
-    bool addQueueNr();
-
     void sortInputCommand(String);
-    void readInputSourceAndDestination(String);
-    void readCommandAndValue(String);
-
-    void operateQueue();
-
-    void updateMyDetectorState() override;
 };

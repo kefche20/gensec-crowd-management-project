@@ -38,6 +38,7 @@ void loop()
 
   if (current_time - start_time >= HEART_BEAT)
   {
+    myGate.myGateLoop();
     if (WiFi.status() != WL_CONNECTED)
     {
       Serial.println("Connection lost, restarting device!");
@@ -50,28 +51,33 @@ void loop()
       my_airport_mqtt.subscribeToMyNetwork(MY_GATE_TOPIC);
     }
 
-    if (gateState == 1)
-    {
-      myGate.myGateLoop();
-      my_current_queue = myGate.getQueueNr();
+    // if (gateState == 1)
+    // {
+    my_current_queue = myGate.getQueueNr();
 
-      my_message += START_CHAR;
-      my_message += MY_ID;
-      my_message += SPLIT_CHAR;
-      my_message += DIV_ID;
-      my_message += SPLIT_CHAR;
-      my_message += COMMAND_TO_INFORM;
-      my_message += DATA_CHAR;
-      my_message += my_current_queue;
-      my_message += END_CHAR;
+    my_message += START_CHAR;
+    my_message += MY_ID;
+    my_message += SPLIT_CHAR;
+    my_message += DIV_ID;
+    my_message += SPLIT_CHAR;
+    my_message += COMMAND_TO_INFORM;
+    my_message += DATA_CHAR;
+    my_message += my_current_queue;
+    my_message += END_CHAR;
 
-      const char* message_to_send = my_message.c_str();
-      my_airport_mqtt.publishToMyNetwork(MY_GATE_TOPIC,message_to_send);
-    }
-    else
-    {
-      gateState = myGate.getGateState();
-    }
+    // Serial.print("GATE QUEUE:");
+    // Serial.println(my_current_queue);
+
+    const char *message_to_send = my_message.c_str();
+    my_airport_mqtt.publishToMyNetwork(MY_GATE_TOPIC, message_to_send);
+    // }
+    // else
+    // {
+    // Serial.println("GATE CLOSED!");
+    // Serial.print("GATE QUEUE:");
+    // Serial.println(my_current_queue);
+    gateState = myGate.getGateState();
+    // }
 
     start_time = millis();
   }
