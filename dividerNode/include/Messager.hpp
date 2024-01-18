@@ -100,31 +100,37 @@ private:
     const char *SelectTopic(Topic topic);
 
     static std::string ExtractContent(CONTENT_TYPE type, std::string msg)
+    // REVIEW - check improve extract content + send message function
     {
-        int contentPosition = 0;
-        int readLength;
+        int startPos = 0;
+        int endPos = 0;
+        int readLen = 0;
 
         switch (type)
         {
         case SRC_ID:
-            contentPosition = 1;
-            readLength = ID_LENGTH;
+            startPos = 1;
+            readLen = ID_LENGTH;
             break;
         case DES_ID:
-            contentPosition = msg.find('>') + 1;
-            readLength = ID_LENGTH;
+            startPos = msg.find('>') + 1;
+            readLen = ID_LENGTH;
             break;
         case MSG:
-            contentPosition = msg.find('-') + 1;
-            readLength = MSG_LENGTH;
+            startPos = msg.find('-') + 1;
+            readLen = MSG_LENGTH;
             break;
-        case DATA:
-            contentPosition = msg.find('+') + 1;
-            readLength = DATA_LENGTH;
+        case DATA1:
+            // data 1 is the gate id: always go afte '+'
+            startPos = msg.find('+') + 1;
+            endPos = msg.find(':');
+            readLen = endPos - startPos;
             break;
         case DATA2:
-            contentPosition = msg.find(':') + 1;
-            readLength = DATA_LENGTH;
+            // data 2 is the gate
+            startPos = msg.find(':') + 1;
+            endPos = msg.find(';');
+            readLen = endPos - startPos;
             break;
 
         default:
@@ -132,7 +138,7 @@ private:
             break;
         }
 
-        return msg.substr(contentPosition, readLength);
+        return msg.substr(startPos, readLen);
     }
 
     static bool IsMsgVaid(std::string msg)

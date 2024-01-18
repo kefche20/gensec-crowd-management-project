@@ -11,7 +11,7 @@
 #include <string>
 
 // Divider
-#define DIVIDER_ID 200
+#define DIVIDER_ID 100
 
 // Heartbeat
 #define BEATRATE 5000

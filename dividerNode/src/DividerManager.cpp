@@ -156,10 +156,13 @@ void DividerManager::dividersChat()
         // start to keep track on the leader hearbeat
         {
             Serial.println("being member!");
-            // destroy all current heart and adding the leader heart
+            // destroy all current heart
             metaAliveTracker.RemoveAll();
+
+            // add and start tracking the leader heart
             metaAliveTracker.Add(SearchLeaderId());
-           
+            metaAliveTracker.StartTracking(SearchLeaderId());
+
             // reset the timer period for sending leader heartbeat
             timer.SetInterval(DEFAULT_RATE);
             timer.Reset();
@@ -171,7 +174,7 @@ void DividerManager::dividersChat()
         // send data heartbeat to leader for every 5 second
         {
             Serial.println("send member alive message");
-        
+
             sender->SendMessage(DIVIDER_ALIVE, id, SearchLeaderId(), MEMBER_ALIVE, localCollector->GetLeastBusyGate());
             timer.Reset();
         }
@@ -190,14 +193,17 @@ void DividerManager::dividersChat()
         {
             Serial.println("being leader!");
 
-            // take heartbeat from all divider
             for (auto &divider : dividers)
+            // add heart and start tracking all members
             {
                 if (!divider.IsLeader())
+                //REVIEW - how could the member be a leader error already handle?
                 {
                     metaAliveTracker.Add(divider.GetId());
+                    metaAliveTracker.StartTracking(divider.GetId());
                 }
             }
+
             // reset the timer period for sending leader heartbeat
             timer.SetInterval(DEFAULT_RATE);
             timer.Reset();
@@ -263,6 +269,7 @@ void DividerManager::HandleNewMember(int newId)
         {
             Serial.println("start to keep track on member");
             metaAliveTracker.Add(newId);
+            metaAliveTracker.StartTracking(newId);
         }
         // }
         // else
@@ -310,6 +317,7 @@ void DividerManager::HandleMemberAlive(int memId, std::pair<int, int> data)
     if (divider != dividers.end())
     // update the latest least busy gate  and add heartbeat id from remote divider
     {
+        Serial.println("update member beat!!");
         divider->UpdateLeastBusyGate(data);
         metaAliveTracker.UpdateNewBeat(memId);
     }

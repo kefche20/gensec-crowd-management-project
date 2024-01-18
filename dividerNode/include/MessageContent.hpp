@@ -25,7 +25,7 @@ enum CONTENT_TYPE
    SRC_ID,
    DES_ID,
    MSG,
-   DATA,
+   DATA1,
    DATA2
 };
 
