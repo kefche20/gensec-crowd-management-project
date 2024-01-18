@@ -69,6 +69,8 @@ namespace hrtbt
 
     ~NodeAliveTracker();
 
+    int GetId();
+
     bool operator==(int id);
 
     bool operator==(const NodeAliveTracker &tracker);
