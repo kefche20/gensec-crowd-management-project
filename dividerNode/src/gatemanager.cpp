@@ -1,5 +1,7 @@
 #include "GateManager.hpp"
 #include "MessageContent.hpp"
+#include <Arduino.h>
+
 
 GateManager::GateManager(int maxGateNum, int openThreshold, int closeThreshold) : maxGateNum(maxGateNum), openThresholdRate(openThreshold), closeThresholdRate(closeThreshold), generalState(ALL_FREE),  metaAliveTracker(10, this)
 {
@@ -114,22 +116,22 @@ void GateManager::allocatePersonToGate()
 */
 void GateManager::GateChats()
 {
+    
     switch (traffic.state)
     {
     case IDLE_T:
         if (traffic.IsNewState())
         {
-
+            Serial.println("idle state!");
             traffic.ClearEntryFlag();
         }
 
         break;
-
     case NORMAL:
     {
         if (traffic.IsNewState())
         {
-
+           Serial.println("normal state");
             traffic.ClearEntryFlag();
         }
 
@@ -221,6 +223,7 @@ void GateManager::GateChats()
 void GateManager::HandleGateRegister(int id)
 {
     // add new gate to list
+    Serial.print("add new gate: ");Serial.println(id);
     Add(id);
 }
 

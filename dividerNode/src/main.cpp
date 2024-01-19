@@ -15,7 +15,7 @@
 
 // Heartbeat
 #define BEATRATE 5000
-#define MAXOFFSET 5000
+#define MAXOFFSET 10000
 
 // Local defines
 #define STATUS_CLOSED 0
@@ -59,11 +59,12 @@ void setup()
   messager.ConnectTopic(topic_dividers_role);
   messager.ConnectTopic(topic_dividers_alive);
   messager.ConnectTopic(topic_gates);
+
 }
 
 void loop()
 {
-
+  gateManager.GateChats();
   dividerManager.dividersChat();
   messager.MqttLoop();
 }

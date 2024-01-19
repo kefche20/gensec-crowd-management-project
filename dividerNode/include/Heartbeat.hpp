@@ -13,7 +13,7 @@
 #include "IAliveManager.hpp"
 
 #define DEFAULT_RATE 5000
-#define DEFAULT_OFFSET 5000
+#define DEFAULT_OFFSET 10000
 
 namespace hrtbt
 {
@@ -69,7 +69,8 @@ namespace hrtbt
 
     ~NodeAliveTracker();
 
-    // int GetId();
+    int GetId();
+
     bool operator==(int id);
 
     bool operator==(const NodeAliveTracker &tracker);
@@ -111,7 +112,7 @@ namespace hrtbt
     bool IsIdExist(int id);
     
     //check and throw the beat id that is already deleted
-    static void FilteringThrownIdTask(void *parameter);
+    static void FilteringTrashIdTask(void *parameter);
   };
 }
 
