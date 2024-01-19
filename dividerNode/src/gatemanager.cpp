@@ -122,7 +122,7 @@ void GateManager::GateChats()
     case IDLE_T:
         if (traffic.IsNewState())
         {
-            Serial.println("idle state!");
+            // Serial.println("idle state!");
             traffic.ClearEntryFlag();
         }
 
@@ -131,7 +131,7 @@ void GateManager::GateChats()
     {
         if (traffic.IsNewState())
         {
-           Serial.println("normal state");
+        //    Serial.println("normal state");
             traffic.ClearEntryFlag();
         }
 

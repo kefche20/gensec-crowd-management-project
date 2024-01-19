@@ -138,7 +138,6 @@ void DividerManager::dividersChat()
             if (IsNextLeader())
             {
                 Serial.println("being leader!");
-
                 sender->SendMessage(DIVIDER_ROLE, id, NEW_LEADER);
                 role.UpdateMode(LEADER);
             }
@@ -175,8 +174,9 @@ void DividerManager::dividersChat()
         if (timer.isTimeOut())
         // send data heartbeat to leader for every 5 second
         {
-
-            Serial.println("send member alive message");
+            Serial.println("member alive-------------: ");
+            Serial.println("number of divider: ");
+            Serial.println(dividers.size());
 
             sender->SendMessage(DIVIDER_ALIVE, id, SearchLeaderId(), MEMBER_ALIVE, localCollector->GetLeastBusyGate());
             timer.Reset();
@@ -217,6 +217,8 @@ void DividerManager::dividersChat()
         if (timer.isTimeOut())
         // leader sent heartbeat to notify member of its alive
         {
+            Serial.println("leader alive-------------: ");
+
             Serial.println("number of divider member: ");
             Serial.println(dividers.size());
 

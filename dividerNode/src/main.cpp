@@ -10,8 +10,7 @@
 
 #include <string>
 
-// Divider
-#define DIVIDER_ID 100
+
 
 // Heartbeat
 #define BEATRATE 5000
@@ -58,7 +57,7 @@ void setup()
   // //topic subscriptions
   messager.ConnectTopic(topic_dividers_role);
   messager.ConnectTopic(topic_dividers_alive);
-  messager.ConnectTopic(topic_gates);
+//  messager.ConnectTopic(topic_gates);
 
 }
 
