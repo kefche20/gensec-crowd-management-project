@@ -1,5 +1,6 @@
 #include "GateManager.hpp"
 #include "MessageContent.hpp"
+#include "algorithm"
 #include <Arduino.h>
 
 GateManager::GateManager(int maxGateNum, int openThreshold, int closeThreshold) : maxGateNum(maxGateNum), openThresholdRate(openThreshold), closeThresholdRate(closeThreshold), generalState(ALL_FREE), metaAliveTracker(10, this)
@@ -125,14 +126,14 @@ void GateManager::GateChats()
             traffic.ClearEntryFlag();
         }
 
-        int numOfActiveGate = GetActiveGate();
-        int openGateId = openAnIdleGate();
+        // int numOfActiveGate = GetActiveGate();
+        // int openGateId = openAnIdleGate();
 
-        if (numOfActiveGate != 0)
-        {
-            sender->SendMessage(GATE, openGateId, OPENGATE);
-            traffic.state = NORMAL;
-        }
+        // if (numOfActiveGate != 0)
+        // {
+        //     sender->SendMessage(GATE, openGateId, OPENGATE);
+        //     traffic.state = NORMAL;
+        // }
 
         break;
     case NORMAL:
@@ -144,24 +145,24 @@ void GateManager::GateChats()
         }
 
         // get the free space rate
-        int freeSpaceRate = GetFreeSpaceRate();
+        // int freeSpaceRate = GetFreeSpaceRate();
 
-        int numOfActiveGate = GetActiveGate();
+        // int numOfActiveGate = GetActiveGate();
 
         // check general state of active gates
-        if (numOfActiveGate < gates.size() && numOfActiveGate > 1)
+        if ( GetActiveGate() < gates.size() && GetActiveGate() > 1)
         {
             generalState = PARTY_DUTY;
         }
 
         // more gate in duty
-        if (freeSpaceRate < openThresholdRate && generalState != ALL_IN_DUTY)
+        if (GetFreeSpaceRate() < openThresholdRate && generalState != ALL_IN_DUTY)
         {
             traffic.state = CROWD;
         }
 
         // when free space is less than a
-        if (freeSpaceRate > closeThresholdRate && generalState != ONE_IN_DUTY)
+        if (GetFreeSpaceRate() > closeThresholdRate && generalState != ONE_IN_DUTY)
         {
             traffic.state = UNOCCUPIED;
         }
@@ -230,10 +231,19 @@ void GateManager::GateChats()
 
 void GateManager::HandleGateRegister(int id)
 {
+
     // add new gate to list
     Serial.print("add new gate: ");
     Serial.println(id);
-    Add(id);
+    if (Add(id)) 
+    //only response ACK if add successfully, (in the case there is the ghost gate with the same id it will be automatically by heartbeat mechanism => real gate might have to send the register msg at around 3 times to wait until ghost gate is Added)
+    {
+        sender->SendMessage(GATE, id, ACK);
+    }
+    else 
+    {
+        // sender->SendMessage(GATE, id, NACK);
+    }
 }
 
 void GateManager::HandleGateDataBeats(int gateId, int numOfPeople)

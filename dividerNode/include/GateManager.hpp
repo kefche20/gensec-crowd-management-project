@@ -12,7 +12,7 @@
 #include "config.hpp"
 
 #include "Gate.hpp"
-#include "heartbeat.hpp"
+#include "Heartbeat.hpp"
 
 #include "IGateListener.hpp"
 #include "INodeManager.hpp"

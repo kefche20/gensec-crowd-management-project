@@ -1,12 +1,13 @@
 #ifndef CONFIG
 #define CONFIG
 
+//NOTE - fixed divider ID and topic gate before upload
 // Divider
 #define DIVIDER_ID 300
 
 
 // TODO: find a solution to store the topics temporary
-static const char *topic_gates = "gates_100";
+static const char *topic_gates = "gates_300";
 static const char *topic_dividers_role = "dividers";
 static const char *topic_dividers_alive = "dividerAlives";
 

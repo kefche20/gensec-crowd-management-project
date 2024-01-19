@@ -120,7 +120,7 @@ bool Messager::SendMessage(Topic topic, int srcId, int destId, int content, int 
     selectTopic = SelectTopic(topic);
 
     char data[200];
-    sprintf(data, "&%s>%s-%s+%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str(), std::to_string(sendedData).c_str());
+    sprintf(data, "&%s>%s-%s+%s:;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str(), std::to_string(sendedData).c_str());
     mqttClient->publish(selectTopic, data);
 
     return true;
@@ -132,7 +132,7 @@ bool Messager::SendMessage(Topic topic, int srcId, int destId, int content, std:
     const char *selectTopic = "default";
     selectTopic = SelectTopic(topic);
     char data[200];
-    sprintf(data, "&%s>%s-%s+%s:%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str(), std::to_string(pairData.first).c_str(), std::to_string(pairData.second).c_str());
+    sprintf(data, "&%s>%s-%s+%s:%s@;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str(), std::to_string(pairData.first).c_str(), std::to_string(pairData.second).c_str());
 
     mqttClient->publish(selectTopic, data);
 
@@ -344,8 +344,8 @@ void Messager::HandleUIMessage(UIMessage msgCode, int data)
         cusListener->HandleCustomerRequest(true);
         break;
 
-    case ACK:
-        cusListener->HandleCustomerRequest(false);
+    // case ACK:
+    //     cusListener->HandleCustomerRequest(false);
     default:
         break;
     }
