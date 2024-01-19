@@ -2,14 +2,13 @@
 #include "MessageContent.hpp"
 #include <Arduino.h>
 
-
-GateManager::GateManager(int maxGateNum, int openThreshold, int closeThreshold) : maxGateNum(maxGateNum), openThresholdRate(openThreshold), closeThresholdRate(closeThreshold), generalState(ALL_FREE),  metaAliveTracker(10, this)
+GateManager::GateManager(int maxGateNum, int openThreshold, int closeThreshold) : maxGateNum(maxGateNum), openThresholdRate(openThreshold), closeThresholdRate(closeThreshold), generalState(ALL_FREE), metaAliveTracker(10, this)
 {
 }
 
-void GateManager::SetSender(ISender* newSender)
+void GateManager::SetSender(ISender *newSender)
 {
-  sender = newSender;
+    sender = newSender;
 }
 
 void GateManager::SetGateState(int gateId, bool sta)
@@ -29,7 +28,7 @@ void GateManager::SetGateState(int gateId, bool sta)
 std::pair<int, int> GateManager::GetLeastBusyGate()
 {
     std::pair<int, int> leastBusyGate;
-    leastBusyGate.first = -1;  // first is id
+    leastBusyGate.first = -1; // first is id
     leastBusyGate.second = 0; // second is busyRate
 
     for (auto &gate : gates)
@@ -116,7 +115,7 @@ void GateManager::allocatePersonToGate()
 */
 void GateManager::GateChats()
 {
-    
+
     switch (traffic.state)
     {
     case IDLE_T:
@@ -126,12 +125,21 @@ void GateManager::GateChats()
             traffic.ClearEntryFlag();
         }
 
+        int numOfActiveGate = GetActiveGate();
+        int openGateId = openAnIdleGate();
+
+        if (numOfActiveGate != 0)
+        {
+            sender->SendMessage(GATE, openGateId, OPENGATE);
+            traffic.state = NORMAL;
+        }
+
         break;
     case NORMAL:
     {
         if (traffic.IsNewState())
         {
-           Serial.println("normal state");
+            Serial.println("normal state");
             traffic.ClearEntryFlag();
         }
 
@@ -152,7 +160,7 @@ void GateManager::GateChats()
             traffic.state = CROWD;
         }
 
-        //when free space is less than a 
+        // when free space is less than a
         if (freeSpaceRate > closeThresholdRate && generalState != ONE_IN_DUTY)
         {
             traffic.state = UNOCCUPIED;
@@ -161,35 +169,35 @@ void GateManager::GateChats()
     break;
 
     case CROWD:
-    //whenever the gate manager is in this state, another new gate will be open
-    {
-        if (traffic.IsNewState())
+        // whenever the gate manager is in this state, another new gate will be open
         {
+            if (traffic.IsNewState())
+            {
 
-            traffic.ClearEntryFlag();
+                traffic.ClearEntryFlag();
+            }
+
+            int openGateId = openAnIdleGate();
+
+            // open more gate
+            if (openGateId != -1)
+            {
+                sender->SendMessage(GATE, openGateId, OPENGATE);
+            }
+            else
+            {
+                generalState = ALL_IN_DUTY;
+            }
+
+            if (GetFreeSpaceRate() < openThresholdRate || generalState == ALL_IN_DUTY)
+            {
+                traffic.state = NORMAL;
+            }
+
+            break;
         }
-
-        int openGateId = openAnIdleGate();
-
-        // open more gate
-        if (openGateId != -1)
-        {
-            sender->SendMessage(GATE, openGateId, OPENGATE);
-        }
-        else
-        {
-            generalState = ALL_IN_DUTY;
-        }
-
-        if (GetFreeSpaceRate() < openThresholdRate || generalState == ALL_IN_DUTY)
-        {
-            traffic.state = NORMAL;
-        }
-
-        break;
-    }
     case UNOCCUPIED:
-    //whenever the gate manager is in this state, an open gate will be close
+        // whenever the gate manager is in this state, an open gate will be close
         if (traffic.IsNewState())
         {
 
@@ -223,7 +231,8 @@ void GateManager::GateChats()
 void GateManager::HandleGateRegister(int id)
 {
     // add new gate to list
-    Serial.print("add new gate: ");Serial.println(id);
+    Serial.print("add new gate: ");
+    Serial.println(id);
     Add(id);
 }
 
@@ -304,4 +313,3 @@ int GateManager::closeAnIdleGate()
 
     return closeGateId;
 }
-

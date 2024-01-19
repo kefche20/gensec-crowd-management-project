@@ -19,7 +19,7 @@ void MyGateSystemManager::myGateSetup()
     ultrasonic1.setupSensor();
     ultrasonic2.setupSensor();
 
-    open_state = 1;
+    open_state = 0;
     busy_state = 0;
 
     pinMode(CLOSE_LED_PIN, OUTPUT);
@@ -53,7 +53,15 @@ void MyGateSystemManager::updateMyDetectorState()
             my_sensor_state = SensorState::DETECTING;
             my_movement_state = MovementState::FIRST_STEP;
         }
-        else
+        else if ((first_catch_val > CATCH_DISTANCE) && (second_catch_val <= CATCH_DISTANCE))
+        {
+            my_sensor_state = SensorState::WAITING;
+        }
+        else if ((first_catch_val <= CATCH_DISTANCE) && (second_catch_val <= CATCH_DISTANCE))
+        {
+            my_sensor_state = SensorState::WAITING;
+        }
+        else if ((first_catch_val > CATCH_DISTANCE) && (second_catch_val > CATCH_DISTANCE))
         {
             my_sensor_state = SensorState::WAITING;
         }
@@ -81,6 +89,12 @@ void MyGateSystemManager::updateMyDetectorState()
                 Serial.println("SECOND DETECT.");
                 my_movement_state = MovementState::THIRD_STEP;
             }
+            else if ((first_catch_val <= CATCH_DISTANCE) && (second_catch_val > CATCH_DISTANCE))
+            {
+                Serial.println("WAIT.");
+                my_movement_state = MovementState::IDLE;
+                my_sensor_state = SensorState::WAITING;
+            }
             break;
 
         case MovementState::THIRD_STEP:
@@ -89,6 +103,12 @@ void MyGateSystemManager::updateMyDetectorState()
                 Serial.println("THIRD DETECT.");
                 my_movement_state = MovementState::IDLE;
                 my_sensor_state = SensorState::CALCULATING;
+            }
+            else if ((first_catch_val <= CATCH_DISTANCE) && (second_catch_val > CATCH_DISTANCE))
+            {
+                Serial.println("WAIT.");
+                my_movement_state = MovementState::IDLE;
+                my_sensor_state = SensorState::WAITING;
             }
             break;
         default:
@@ -119,7 +139,7 @@ void MyGateSystemManager::decreaseQueue()
             busy_state = 0;
         }
     }
-    
+
     checkIfBusy();
 }
 
@@ -259,5 +279,5 @@ void MyGateSystemManager::checkIfBusy()
     else
     {
         digitalWrite(BUSY_LED_PIN, HIGH);
-    }      
+    }
 }

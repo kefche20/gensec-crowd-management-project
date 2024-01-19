@@ -280,6 +280,8 @@ void Messager::ReadGateMessage(std::string msg)
     srcId = std::stoi(ExtractContent(SRC_ID, msg));
     desId = std::stoi(ExtractContent(DES_ID, msg));
     msgCode = std::stoi(ExtractContent(MSG, msg));
+
+    Serial.println(msg.c_str());
     // data = std::stoi(ExtractContent(DATA, msg));
 
     // join network - make friend - optimize this code
@@ -302,7 +304,7 @@ void Messager::HandleGateMessage(int srcId, GateMessage msgCode, int data)
     case REGISTER:
         gateListener->HandleGateRegister(srcId);
         break;
-    case NUMOFPEOPLE:
+    case DATA:
         gateListener->HandleGateDataBeats(srcId, data);
     default:
         break;

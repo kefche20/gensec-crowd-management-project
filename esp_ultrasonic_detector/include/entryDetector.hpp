@@ -7,8 +7,8 @@
 #define ECHO_PIN_2 25
 
 #define CLOSE_LED_PIN 15
-#define BUSY_LED_PIN 4
-#define OPEN_LED_PIN 2
+#define BUSY_LED_PIN 2
+#define OPEN_LED_PIN 4
 
 // sensor constance
 #define CATCH_DISTANCE 50
