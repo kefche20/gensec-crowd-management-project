@@ -100,6 +100,7 @@ void callback(char *topic, uint8_t *payload, unsigned int length)
   else if (strcmp(topic, topic_gates) == 0)
   {
     // read the gate message
+    messager.ReadGateMessage(msg);
   }
   else if (topic == topic_ui)
   {

@@ -1,147 +1,136 @@
 #include <Arduino.h>
+#include "..\include\my_gate_sensor\headers\MyGateSystemManager.hpp"
 
-#define TRIGGER_PIN_1 2
-#define TRIGGER_PIN_2 12
+MyGateSystemManager myGate;
+WiFiClient esp_client;
+MyAirportMQTT my_airport_mqtt(esp_client, MY_MQTT_BROKER, MY_NET_PORT, MY_ID, callback);
 
-#define ECHO_PIN_1 15
-#define ECHO_PIN_2 14
+uint8_t gateState;
 
-#define CATCH_DISTANCE 10
-#define MAX_DETECT_DELAY 50
-
-typedef enum
-{
-  WAITING,
-  DETECTING,
-  ADDING
-} SensorState;
-
-typedef enum
-{
-  IDLE,
-  FIRST_STEP,
-  SECOND_STEP,
-  THIRD_STEP
-} MovementState;
-
-uint32_t start_time;
+uint32_t heartbeat_start_time;
+uint32_t detect_start_time;
 uint32_t current_time;
 
-float first_catch_val;
-float second_catch_val;
-uint8_t nr_of_people;
-
-// put function declarations here:
-float findDistance(int, int);
-
-SensorState sensor_state;
-MovementState movement_state;
+int my_current_queue;
 
 void setup()
 {
   // put your setup code here, to run once:
   Serial.begin(9600);
+  WiFi.begin(MY_NET_SSID, MY_NET_PASSWORD);
+  heartbeat_start_time = millis();
+  detect_start_time = millis();
 
-  pinMode(TRIGGER_PIN_1, OUTPUT);
-  pinMode(TRIGGER_PIN_2, OUTPUT);
-  pinMode(ECHO_PIN_1, INPUT);
-  pinMode(ECHO_PIN_2, INPUT);
+  while (WiFi.status() != WL_CONNECTED && (millis() - heartbeat_start_time >= WIFI_CONNECT_TIMEOUT))
+  {
+    // NOTE - Wait for connection or timeout.
+  }
 
-  sensor_state = WAITING;
-  movement_state = IDLE;
-  first_catch_val = 0;
-  second_catch_val = 0;
-  nr_of_people = 0;
-  start_time = millis();
+  my_airport_mqtt.subscribeToMyNetwork(MY_GATE_TOPIC);
+  myGate.myGateSetup();
+  gateState = myGate.getGateState();
   Serial.println("Sensor Demo Start!");
 }
 
 void loop()
 {
   // put your main code here, to run repeatedly:
-  first_catch_val = findDistance(TRIGGER_PIN_1, ECHO_PIN_1);
-  second_catch_val = findDistance(TRIGGER_PIN_2, ECHO_PIN_2);
+  String my_message = "";
   uint32_t current_time = millis();
 
-  if (current_time - start_time >= MAX_DETECT_DELAY)
+  if (current_time - detect_start_time >= DETECT_DELAY)
   {
-    switch (sensor_state)
-    {
-    case WAITING:
-      if ((first_catch_val <= CATCH_DISTANCE) && (second_catch_val > CATCH_DISTANCE))
-      {
-        sensor_state = DETECTING;
-        movement_state = FIRST_STEP;
-      }
-      else if ((first_catch_val > CATCH_DISTANCE) && (second_catch_val <= CATCH_DISTANCE))
-      {
-        sensor_state = WAITING;
-      }
-      else if ((first_catch_val <= CATCH_DISTANCE) && (second_catch_val <= CATCH_DISTANCE))
-      {
-        sensor_state = WAITING;
-      }
-      else if ((first_catch_val > CATCH_DISTANCE) && (second_catch_val > CATCH_DISTANCE))
-      {
-        sensor_state = WAITING;
-      }
-      break;
-    case DETECTING:
-      switch (movement_state)
-      {
-      case FIRST_STEP:
-        if ((first_catch_val <= CATCH_DISTANCE) && (second_catch_val <= CATCH_DISTANCE))
-        {
-          movement_state = SECOND_STEP;
-        }
-        else if ((first_catch_val > CATCH_DISTANCE) && (second_catch_val <= CATCH_DISTANCE))
-        {
-          movement_state = IDLE;
-          sensor_state = WAITING;
-        }
-        break;
-      case SECOND_STEP:
-        if ((first_catch_val > CATCH_DISTANCE) && (second_catch_val <= CATCH_DISTANCE))
-        {
-          movement_state = THIRD_STEP;
-        }
-        break;
-      case THIRD_STEP:
-        if ((first_catch_val > CATCH_DISTANCE) && (second_catch_val > CATCH_DISTANCE))
-        {
-          movement_state = IDLE;
-          sensor_state = ADDING;
-        }
-        break;
-      default:
-        break;
-      }
-      break;
-    case ADDING:
-      nr_of_people++;
-      Serial.print("Number of people: ");
-      Serial.println(nr_of_people);
-      sensor_state = WAITING;
-      break;
+    myGate.myGateLoop();
+    detect_start_time = current_time;
+  }
 
-    default:
-      break;
+  if (current_time - heartbeat_start_time >= HEART_BEAT)
+  {
+    if (WiFi.status() != WL_CONNECTED)
+    {
+      Serial.println("Connection lost, restarting device!");
+      ESP.restart();
     }
-    start_time = millis();
+    if (!my_airport_mqtt.amIconnected())
+    {
+      Serial.println("re-subscribing.");
+      my_airport_mqtt.connectToMyNetwork();
+      my_airport_mqtt.subscribeToMyNetwork(MY_GATE_TOPIC);
+    }
+
+    if (gateState == 1)
+    {
+      my_current_queue = myGate.getQueueNr();
+
+      my_message = dataToSend(my_current_queue);
+
+      Serial.println(my_message);
+
+      Serial.print("GATE QUEUE:");
+      Serial.println(my_current_queue);
+
+      const char *message_to_send = my_message.c_str();
+      my_airport_mqtt.publishToMyNetwork(MY_GATE_TOPIC, message_to_send);
+    }
+    else
+    {
+      Serial.println("GATE CLOSED!");
+      String register_msg = dataToRegister();
+      Serial.println(register_msg);
+      Serial.print("GATE QUEUE:");
+      Serial.println(my_current_queue);
+
+      const char *register_myself = register_msg.c_str();
+      my_airport_mqtt.publishToMyNetwork(MY_GATE_TOPIC, register_myself);
+
+      gateState = myGate.getGateState();
+    }
+
+    heartbeat_start_time = millis();
   }
 }
 
-// put function definitions here:
-float findDistance(int trigger_pin, int echo_pin)
+String dataToSend(int queue_nr)
 {
-  digitalWrite(trigger_pin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trigger_pin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigger_pin, LOW);
-  noInterrupts();
-  float duration = pulseIn(echo_pin, HIGH, 23529.4);
-  interrupts();
-  float distance = duration / 58.8235;
-  return distance;
+  String message = "";
+  message += START_CHAR;
+  message += MY_ID;
+  message += ARROW_CHAR;
+  message += DIV_ID;
+  message += SPLIT_CHAR;
+  message += COMMAND_TO_INFORM;
+  message += DATA_CHAR;
+  message += queue_nr;
+  message += EXTRA_CHAR;
+  message += END_CHAR;
+
+  return message;
+}
+String dataToRegister()
+{
+  String message = "";
+  message += START_CHAR;
+  message += MY_ID;
+  message += ARROW_CHAR;
+  message += DIV_ID;
+  message += SPLIT_CHAR;
+  message += COMMAND_TO_REGISTER;
+  message += END_CHAR;
+
+  return message;
+}
+
+void callback(char *topic, byte *payload, unsigned int len_of_payload)
+{
+  String message = EMPTY_STRING;
+
+  for (int i = 0; i < len_of_payload; i++)
+  {
+    message += (char)payload[i];
+  }
+
+  if (strcmp(topic, MY_GATE_TOPIC) == 0)
+  {
+    myGate.sortInputCommand(message);
+  }
 }

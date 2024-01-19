@@ -48,13 +48,13 @@ enum DividerDirectMessage
 
 enum GateMessage
 {
-   OPENGATE,
-   CLOSEGATE,
-   NUMOFPEOPLE, // REVIEW - chaning message name from NUMOFPEOPLE to DATA
-   EMERGENCY,
-   ALLOC,
-   REGISTER,
-   SCANNED
+   OPENGATE = 1,
+   CLOSEGATE = 2,
+   DATA = 3, // REVIEW - chaning message name from NUMOFPEOPLE to DATA
+   EMERGENCY = 4,
+   ALLOC = 5,
+   REGISTER = 6,
+   SCANNED = 7,
 
 };
 

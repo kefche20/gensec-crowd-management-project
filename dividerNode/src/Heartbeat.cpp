@@ -140,7 +140,6 @@ namespace hrtbt
         // cancel the adding if id is already exist
         if (IsIdExist(id))
         {
-
             return false;
         }
 

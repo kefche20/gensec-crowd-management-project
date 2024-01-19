@@ -1,5 +1,4 @@
-#ifndef MOVEMENT_STATES_ENUM
-#define MOVEMENT_STATES_ENUM
+#pragma once
 
 enum class MovementState
 {
@@ -8,5 +7,3 @@ enum class MovementState
     SECOND_STEP = 2,
     THIRD_STEP = 3
 };
-
-#endif
