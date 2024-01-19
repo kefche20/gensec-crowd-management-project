@@ -123,7 +123,7 @@ private:
         case DATA1:
             // data 1 is the gate id: always go afte '+'
             startPos = msg.find('+') + 1;
-            endPos = msg.find(':');
+            endPos = msg.find(';');
             readLen = endPos - startPos;
             break;
         case DATA2:

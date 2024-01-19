@@ -30,18 +30,19 @@
 #define MY_MQTT_USERNAME "Nedyalko"
 #define MY_MQTT_PASSWORD "1234"
 
-#define MY_GATE_TOPIC "airportDemo"
+#define MY_GATE_TOPIC "gates"
 
 #define EMPTY_STRING ""
 
 #define START_CHAR '&'
 #define ARROW_CHAR '>'
 #define SPLIT_CHAR '-'
-#define DATA_CHAR "+"
+#define DATA_CHAR '+'
 #define END_CHAR ';'
 
-#define EXTRA_CHAR ","
+#define EXTRA_CHAR ':'
 
+#define COMMAND_TO_REGISTER "6"
 #define COMMAND_TO_OPEN "1"
 #define COMMAND_TO_CLOSE "2"
 #define COMMAND_TO_ADD "5"
@@ -51,7 +52,8 @@
 #define DIV_ID "100"
 
 #define COM_DELAY 1000
-#define HEART_BEAT 100
+#define DETECT_DELAY 100
+#define HEART_BEAT 5000
 #define WIFI_CONNECT_TIMEOUT 10000
 
 #include <Arduino.h>
@@ -61,3 +63,5 @@
 #include "..\include\my_gate_sensor\enum\statesOfMovement.hpp"
 
 void callback(char *, byte *, unsigned int);
+String dataToSend(int);
+String dataToRegister();

@@ -12,14 +12,14 @@ MyGateSystemManager::~MyGateSystemManager()
 
 void MyGateSystemManager::myGateSetup()
 {
-    Serial.print("SETUP GATE");
+    Serial.println("SETUP GATE");
     my_sensor_state = SensorState::WAITING;
     my_movement_state = MovementState::IDLE;
 
     ultrasonic1.setupSensor();
     ultrasonic2.setupSensor();
 
-    open_state = 0;
+    open_state = 1;
     busy_state = 0;
 
     pinMode(CLOSE_LED_PIN, OUTPUT);
@@ -69,6 +69,7 @@ void MyGateSystemManager::updateMyDetectorState()
             }
             else if ((first_catch_val > CATCH_DISTANCE) && (second_catch_val <= CATCH_DISTANCE))
             {
+                Serial.println("WAITING.");
                 my_movement_state = MovementState::IDLE;
                 my_sensor_state = SensorState::WAITING;
             }

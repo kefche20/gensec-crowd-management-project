@@ -7,7 +7,8 @@ MyAirportMQTT my_airport_mqtt(esp_client, MY_MQTT_BROKER, MY_NET_PORT, MY_ID, ca
 
 uint8_t gateState;
 
-uint32_t start_time;
+uint32_t heartbeat_start_time;
+uint32_t detect_start_time;
 uint32_t current_time;
 
 int my_current_queue;
@@ -17,9 +18,10 @@ void setup()
   // put your setup code here, to run once:
   Serial.begin(9600);
   WiFi.begin(MY_NET_SSID, MY_NET_PASSWORD);
-  start_time = millis();
+  heartbeat_start_time = millis();
+  detect_start_time = millis();
 
-  while (WiFi.status() != WL_CONNECTED && (millis() - start_time >= WIFI_CONNECT_TIMEOUT))
+  while (WiFi.status() != WL_CONNECTED && (millis() - heartbeat_start_time >= WIFI_CONNECT_TIMEOUT))
   {
     // NOTE - Wait for connection or timeout.
   }
@@ -36,9 +38,14 @@ void loop()
   String my_message = "";
   uint32_t current_time = millis();
 
-  if (current_time - start_time >= HEART_BEAT)
+  if (current_time - detect_start_time >= DETECT_DELAY)
   {
     myGate.myGateLoop();
+    detect_start_time = current_time;
+  }
+
+  if (current_time - heartbeat_start_time >= HEART_BEAT)
+  {
     if (WiFi.status() != WL_CONNECTED)
     {
       Serial.println("Connection lost, restarting device!");
@@ -51,36 +58,66 @@ void loop()
       my_airport_mqtt.subscribeToMyNetwork(MY_GATE_TOPIC);
     }
 
-    // if (gateState == 1)
-    // {
-    my_current_queue = myGate.getQueueNr();
+    if (gateState == 1)
+    {
+      my_current_queue = myGate.getQueueNr();
 
-    my_message += START_CHAR;
-    my_message += MY_ID;
-    my_message += SPLIT_CHAR;
-    my_message += DIV_ID;
-    my_message += SPLIT_CHAR;
-    my_message += COMMAND_TO_INFORM;
-    my_message += DATA_CHAR;
-    my_message += my_current_queue;
-    my_message += END_CHAR;
+      my_message = dataToSend(my_current_queue);
 
-    // Serial.print("GATE QUEUE:");
-    // Serial.println(my_current_queue);
+      Serial.println(my_message);
 
-    const char *message_to_send = my_message.c_str();
-    my_airport_mqtt.publishToMyNetwork(MY_GATE_TOPIC, message_to_send);
-    // }
-    // else
-    // {
-    // Serial.println("GATE CLOSED!");
-    // Serial.print("GATE QUEUE:");
-    // Serial.println(my_current_queue);
-    gateState = myGate.getGateState();
-    // }
+      Serial.print("GATE QUEUE:");
+      Serial.println(my_current_queue);
 
-    start_time = millis();
+      const char *message_to_send = my_message.c_str();
+      my_airport_mqtt.publishToMyNetwork(MY_GATE_TOPIC, message_to_send);
+    }
+    else
+    {
+      Serial.println("GATE CLOSED!");
+      String register_msg = dataToRegister();
+      Serial.println(register_msg);
+      Serial.print("GATE QUEUE:");
+      Serial.println(my_current_queue);
+
+      const char *register_myself = register_msg.c_str();
+      my_airport_mqtt.publishToMyNetwork(MY_GATE_TOPIC, register_myself);
+
+      gateState = myGate.getGateState();
+    }
+
+    heartbeat_start_time = millis();
   }
+}
+
+String dataToSend(int queue_nr)
+{
+  String message = "";
+  message += START_CHAR;
+  message += MY_ID;
+  message += ARROW_CHAR;
+  message += DIV_ID;
+  message += SPLIT_CHAR;
+  message += COMMAND_TO_INFORM;
+  message += DATA_CHAR;
+  message += queue_nr;
+  message += EXTRA_CHAR;
+  message += END_CHAR;
+
+  return message;
+}
+String dataToRegister()
+{
+  String message = "";
+  message += START_CHAR;
+  message += MY_ID;
+  message += ARROW_CHAR;
+  message += DIV_ID;
+  message += SPLIT_CHAR;
+  message += COMMAND_TO_REGISTER;
+  message += END_CHAR;
+
+  return message;
 }
 
 void callback(char *topic, byte *payload, unsigned int len_of_payload)
