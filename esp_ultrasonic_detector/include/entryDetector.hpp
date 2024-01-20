@@ -30,7 +30,7 @@
 #define MY_MQTT_USERNAME "Nedyalko"
 #define MY_MQTT_PASSWORD "1234"
 
-#define MY_GATE_TOPIC "gates"
+#define MY_GATE_TOPIC "gates_100"
 
 #define EMPTY_STRING ""
 
@@ -43,13 +43,14 @@
 #define EXTRA_CHAR ':'
 
 #define COMMAND_TO_REGISTER "6"
+#define DEMAND_RECEIVED "0"
 #define COMMAND_TO_OPEN "1"
 #define COMMAND_TO_CLOSE "2"
-#define COMMAND_TO_ADD "5"
 #define COMMAND_TO_INFORM "3"
+#define COMMAND_TO_ADD "5"
 
-#define MY_ID "001"
-#define DIV_ID "000"
+#define MY_ID "101"
+#define DIV_ID "100"
 
 #define COM_DELAY 1000
 #define DETECT_DELAY 100

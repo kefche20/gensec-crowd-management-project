@@ -21,6 +21,7 @@ void MyGateSystemManager::myGateSetup()
 
     open_state = 0;
     busy_state = 0;
+    register_state = 0;
 
     pinMode(CLOSE_LED_PIN, OUTPUT);
     pinMode(OPEN_LED_PIN, OUTPUT);
@@ -148,9 +149,9 @@ int MyGateSystemManager::getQueueNr()
     return my_queue;
 }
 
-uint8_t MyGateSystemManager::getGateState()
+uint8_t MyGateSystemManager::getRegisterState()
 {
-    return open_state;
+    return register_state;
 }
 
 bool MyGateSystemManager::addQueueNr()
@@ -209,12 +210,14 @@ void MyGateSystemManager::readInputSourceAndDestination(String message)
 void MyGateSystemManager::readCommandAndValue(String message)
 {
     int indicator_3;
+    int indicator_4;
     indicator_3 = message.indexOf(DATA_CHAR);
 
     if (indicator_3 != -1)
     {
         my_input_command = message.substring(0, indicator_3);
-        my_input_value = message.substring(indicator_3 + 1);
+        indicator_4 = message.indexOf(EXTRA_CHAR, indicator_3 + 1);
+        my_input_value = message.substring(indicator_3 + 1, indicator_4);
     }
     else
     {
@@ -234,6 +237,7 @@ void MyGateSystemManager::operateQueue()
             open_state = 1;
         }
     }
+
     if (my_input_command == COMMAND_TO_CLOSE)
     {
         if (open_state == 1)
@@ -242,6 +246,16 @@ void MyGateSystemManager::operateQueue()
             open_state = 0;
         }
     }
+
+    if (my_input_command == DEMAND_RECEIVED)
+    {
+        if (register_state == 0)
+        {
+            Serial.println("REGISTERED!");
+            register_state = 1;
+        }
+    }
+    
     if (my_input_command == COMMAND_TO_ADD)
     {
         if (addQueueNr() == false)

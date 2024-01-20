@@ -1,14 +1,18 @@
 #include <Arduino.h>
+#include "entryDetector.hpp"
+#include "..\include\my_gate_mqtt\MyAirportMQTT.hpp"
 #include "..\include\my_gate_sensor\headers\MyGateSystemManager.hpp"
 
-MyGateSystemManager myGate;
 WiFiClient esp_client;
-MyAirportMQTT my_airport_mqtt(esp_client, MY_MQTT_BROKER, MY_NET_PORT, MY_ID, callback);
+PubSubClient mqttClient(esp_client);
+// MyAirportMQTT my_airport_mqtt(esp_client, MY_MQTT_BROKER, MY_NET_PORT, MY_ID, MY_MQTT_USERNAME, MY_MQTT_PASSWORD, callback);
 
-uint8_t gateState;
+MyGateSystemManager myGate;
+uint8_t reg_state;
 
 uint32_t heartbeat_start_time;
 uint32_t detect_start_time;
+uint32_t wifi_start_time;
 uint32_t current_time;
 
 int my_current_queue;
@@ -16,20 +20,70 @@ int my_current_queue;
 void setup()
 {
   // put your setup code here, to run once:
+  // Serial.begin(9600);
+  // heartbeat_start_time = millis();
+  // detect_start_time = millis();
+  // wifi_start_time = millis();
+
+  // WiFi.begin(MY_NET_SSID, MY_NET_PASSWORD);
+
+  // while (WiFi.status() != WL_CONNECTED && (millis() - heartbeat_start_time >= WIFI_CONNECT_TIMEOUT))
+  // {
+  //   heartbeat_start_time = millis();
+  //   detect_start_time = millis();
+  //   wifi_start_time = millis();
+  //   // NOTE - Wait for connection or timeout.
+  // }
+
+  // if (my_airport_mqtt.subscribeToMyNetwork(MY_GATE_TOPIC))
+  // {
+  //   Serial.println("Subscribed!");
+  // }
+  // else
+  // {
+  //   Serial.println("Fail!");
+  // }
+  ///////////////////////////////////////////////////////////////////////////
+  myGate.myGateSetup();
+  reg_state = myGate.getRegisterState();
+  Serial.println("Sensor Demo Start!");
   Serial.begin(9600);
   WiFi.begin(MY_NET_SSID, MY_NET_PASSWORD);
-  heartbeat_start_time = millis();
-  detect_start_time = millis();
-
-  while (WiFi.status() != WL_CONNECTED && (millis() - heartbeat_start_time >= WIFI_CONNECT_TIMEOUT))
+  Serial.println("Connecting to WiFi.");
+  while (WiFi.status() != WL_CONNECTED)
   {
-    // NOTE - Wait for connection or timeout.
+    delay(500);
+    Serial.print(".");
   }
+  Serial.println();
+  Serial.println("Connected!");
 
-  my_airport_mqtt.subscribeToMyNetwork(MY_GATE_TOPIC);
-  myGate.myGateSetup();
-  gateState = myGate.getGateState();
-  Serial.println("Sensor Demo Start!");
+  mqttClient.setServer(MY_MQTT_BROKER, MY_NET_PORT);
+  mqttClient.setCallback(callback);
+  while (!mqttClient.connected())
+  {
+    String client_id = "esp32Comms";
+    client_id += String(WiFi.macAddress());
+    Serial.printf("%s is connecting...\n", client_id.c_str());
+    if (mqttClient.connect(client_id.c_str(), MY_MQTT_USERNAME, MY_MQTT_PASSWORD))
+    {
+      Serial.println("Connected to the broker!");
+    }
+    else
+    {
+      Serial.print("Error: ");
+      Serial.print(mqttClient.state());
+      delay(2000);
+    }
+  }
+  mqttClient.subscribe(MY_GATE_TOPIC);
+
+  // Register in the divider system
+  // Please implement separate function!
+  delay(1000);
+  char data[100];
+  sprintf(data, "&%s-REGISTER;", MY_ID);
+  mqttClient.publish("airportDemo", data);
 }
 
 void loop()
@@ -41,24 +95,32 @@ void loop()
   if (current_time - detect_start_time >= DETECT_DELAY)
   {
     myGate.myGateLoop();
+    reg_state = myGate.getRegisterState();
     detect_start_time = current_time;
+  }
+
+  if (current_time - wifi_start_time >= COM_DELAY)
+  {
+    mqttClient.loop();
+    //   if (WiFi.status() != WL_CONNECTED)
+    //   {
+    //     Serial.println("Connection lost, restarting device!");
+    //     ESP.restart();
+    //   }
+
+    //   if (!my_airport_mqtt.amIconnected())
+    //   {
+    //     Serial.println("re-subscribing.");
+    //     my_airport_mqtt.connectToMyNetwork();
+    //     my_airport_mqtt.subscribeToMyNetwork(MY_GATE_TOPIC);
+    //   }
+    wifi_start_time = current_time;
   }
 
   if (current_time - heartbeat_start_time >= HEART_BEAT)
   {
-    if (WiFi.status() != WL_CONNECTED)
-    {
-      Serial.println("Connection lost, restarting device!");
-      ESP.restart();
-    }
-    if (!my_airport_mqtt.amIconnected())
-    {
-      Serial.println("re-subscribing.");
-      my_airport_mqtt.connectToMyNetwork();
-      my_airport_mqtt.subscribeToMyNetwork(MY_GATE_TOPIC);
-    }
-
-    if (gateState == 1)
+    // if not registered, send request every 5 sec.
+    if (reg_state == 1)
     {
       my_current_queue = myGate.getQueueNr();
 
@@ -66,27 +128,24 @@ void loop()
 
       Serial.println(my_message);
 
-      Serial.print("GATE QUEUE:");
+      Serial.print("GATE QUEUE: ");
       Serial.println(my_current_queue);
 
       const char *message_to_send = my_message.c_str();
-      my_airport_mqtt.publishToMyNetwork(MY_GATE_TOPIC, message_to_send);
+      mqttClient.publish(MY_GATE_TOPIC, message_to_send);
+      // my_airport_mqtt.publishToMyNetwork(MY_GATE_TOPIC, message_to_send);
     }
-    else
+
+    if (reg_state == 0)
     {
-      Serial.println("GATE CLOSED!");
       String register_msg = dataToRegister();
-      Serial.println(register_msg);
-      Serial.print("GATE QUEUE:");
-      Serial.println(my_current_queue);
-
+      Serial.println("REGISTERING");
+      // Serial.println(register_msg);
       const char *register_myself = register_msg.c_str();
-      my_airport_mqtt.publishToMyNetwork(MY_GATE_TOPIC, register_myself);
-
-      gateState = myGate.getGateState();
+      mqttClient.publish(MY_GATE_TOPIC, register_myself);
+      // my_airport_mqtt.publishToMyNetwork(MY_GATE_TOPIC, register_myself);
     }
-
-    heartbeat_start_time = millis();
+    heartbeat_start_time = current_time;
   }
 }
 
@@ -106,6 +165,7 @@ String dataToSend(int queue_nr)
 
   return message;
 }
+
 String dataToRegister()
 {
   String message = "";
@@ -124,6 +184,8 @@ void callback(char *topic, byte *payload, unsigned int len_of_payload)
 {
   String message = EMPTY_STRING;
 
+  Serial.println(topic);
+
   for (int i = 0; i < len_of_payload; i++)
   {
     message += (char)payload[i];
@@ -133,4 +195,6 @@ void callback(char *topic, byte *payload, unsigned int len_of_payload)
   {
     myGate.sortInputCommand(message);
   }
+
+  Serial.println(message);
 }

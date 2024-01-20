@@ -1,5 +1,4 @@
-#ifndef MY_NETWORK_CONNECTOR_INTERFACE_HPP
-#define MY_NETWORK_CONNECTOR_INTERFACE_HPP
+#pragma once
 
 #include <Arduino.h>
 #include "IMyNetCommPublisher.hpp"
@@ -16,5 +15,3 @@ public:
     virtual void myNetLoop() = 0;
     virtual bool amIconnected() = 0;
 };
-
-#endif

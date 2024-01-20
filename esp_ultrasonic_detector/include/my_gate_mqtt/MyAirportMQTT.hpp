@@ -1,5 +1,4 @@
-#ifndef MY_REMOTE_MQTT_HPP
-#define MY_REMOTE_MQTT_HPP
+#pragma once
 
 #include <PubSubClient.h>
 #include "IMyNetworkConnector.hpp"
@@ -12,10 +11,12 @@ private:
     const char *my_server;
     int my_net_port;
     const char *my_id;
+    const char *mqtt_username;
+    const char *mqtt_password;
 
 public:
     MyAirportMQTT *next;
-    MyAirportMQTT(Client &, const char *, int, const char *, void (*externalCallback)(char *, byte*, unsigned int));
+    MyAirportMQTT(Client &, const char *, int, const char *, const char *, const char *, void (*externalCallback)(char *, byte*, unsigned int));
     ~MyAirportMQTT();
     
     void setServer(const char *) override;
@@ -29,5 +30,3 @@ public:
     bool subscribeToMyNetwork(const char *) override;
     bool publishToMyNetwork(const char *, const char *);
 };
-
-#endif

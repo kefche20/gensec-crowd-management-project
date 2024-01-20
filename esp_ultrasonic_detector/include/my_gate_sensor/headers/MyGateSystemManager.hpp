@@ -1,7 +1,6 @@
 #pragma once
 
 #include "..\include\my_gate_sensor\headers\MyUltrasonicSensor.hpp"
-#include "..\include\my_gate_mqtt\MyAirportMQTT.hpp"
 
 class MyGateSystemManager : public IMySensorOperator
 {
@@ -20,6 +19,7 @@ private:
 
     uint8_t busy_state;
     uint8_t open_state;
+    uint8_t register_state;
 
     float first_catch_val;
     float second_catch_val;
@@ -49,7 +49,7 @@ public:
     void myGateLoop();
 
     int getQueueNr();
-    uint8_t getGateState();
+    uint8_t getRegisterState();
 
     void sortInputCommand(String);
 };
