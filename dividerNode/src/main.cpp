@@ -55,6 +55,7 @@ void setup()
   // //topic subscriptions
   messager.ConnectTopic(topic_dividers_role);
   messager.ConnectTopic(topic_dividers_alive);
+  messager.ConnectTopic(topic_ui);
   messager.ConnectTopic(topic_gates);
 
 }
@@ -100,9 +101,15 @@ void callback(char *topic, uint8_t *payload, unsigned int length)
     // read the gate message
     messager.ReadGateMessage(msg);
   }
-  else if (topic == topic_ui)
+  else if (strcmp(topic, topic_ui) == 0)
   {
-    // read message form the ui
+    if(dividerManager.GetRoleMode() == RoleMode::LEADER)
+    {
+      messager.ReadUIMessage(msg);
+    }
+    else{
+      Serial.println("Not a leader, cannot read UI message");
+    }
   }
 
   Serial.print("\n\n");
