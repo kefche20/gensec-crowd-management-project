@@ -86,6 +86,8 @@ public:
 
     bool SendMessage(Topic topic, int srcId, int destId, int content, std::pair<int, int> pairContent) override;
 
+    bool SendUIMessage(Topic topic, int srcId, int command, std::string content);
+
     static bool ConnectWiFi(WiFiClient *wifi);
 
 private:

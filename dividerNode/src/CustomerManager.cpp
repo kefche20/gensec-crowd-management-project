@@ -35,7 +35,6 @@ bool CustomerManager::IsLeader()
 int CustomerManager::ResponseGuidingRequest()
 {
     GetLeastBusyGateId();
-    Serial.println("1");
     if(leastBusyGateId != ERROR)
     {
         return leastBusyGateId;
@@ -43,7 +42,7 @@ int CustomerManager::ResponseGuidingRequest()
     }
     else
     {
-        return 000;
+        return -1;
     }
 
 }
@@ -53,6 +52,10 @@ bool CustomerManager::GetLeastBusyGateId()
     std::pair<int, int> localLeastBusyGate = localCollector->GetLeastBusyGate();
     std::pair<int, int> remoteLeastBusyGate = remoteCollector->GetLeastBusyGate();
 
+    Serial.println(localLeastBusyGate.first);
+    Serial.println(localLeastBusyGate.second);
+    Serial.println(remoteLeastBusyGate.first);
+    Serial.println(remoteLeastBusyGate.second);
     if (localLeastBusyGate.first == ERROR && remoteLeastBusyGate.first == ERROR)
     // cancel
     {

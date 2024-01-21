@@ -11,7 +11,7 @@ static const char *topic_gates = "gates_200";
 static const char *topic_dividers_role = "dividers";
 static const char *topic_dividers_alive = "dividerAlives";
 
-static const char *topic_ui = "ui";
+static const char *topic_ui = "airport_ui";
 
 // MQTT Broker variables
 static const char *ssid = "ThisOne";       // Enter your WiFi name
