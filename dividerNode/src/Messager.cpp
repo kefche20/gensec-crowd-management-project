@@ -90,6 +90,7 @@ bool Messager::ConnectWiFi(WiFiClient *wifi)
     return true;
 }
 
+
 bool Messager::SendMessage(Topic topic, int srcId, int content)
 {
     const char *selectTopic = "default";
@@ -139,6 +140,17 @@ bool Messager::SendMessage(Topic topic, int srcId, int destId, int content, std:
     char data[200];
     sprintf(data, "&%s>%s-%s+%s:%s@;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str(), std::to_string(pairData.first).c_str(), std::to_string(pairData.second).c_str());
 
+    mqttClient->publish(selectTopic, data);
+
+    return true;
+}
+bool Messager::SendUIMessage(Topic topic, int srcId, int command, std::string content)
+{
+    const char *selectTopic = "default";
+    selectTopic = SelectTopic(topic);
+
+    char data[200];
+    sprintf(data, "&%s>%s-%s+%s;", std::to_string(srcId).c_str(), "000", std::to_string(command).c_str(), content.c_str());
     mqttClient->publish(selectTopic, data);
 
     return true;
@@ -346,23 +358,31 @@ void Messager::ReadUIMessage(std::string msg)
 void Messager::HandleUIMessage(int msgCode, int data)
 {
     Serial.println(msgCode);
+
+    int gateId;
     switch (msgCode)
     {
-    case DATA:
+    case SCANNED:
         Serial.println("New people waiting for allocation:");
         // TODO: maybe introduce new method for sending data correctly according to the protocol
-        int gateId = cusListener->HandleUIRequest(data);
+        cusListener->HandleUIRequest(data);
         if(gateId == -1)
         {
+            Serial.println("No free gates");
             // TODO: no free gate, tell this to the UI
+            SendUIMessage(UI, DIVIDER_ID, ALLOC, "000");
             return;
         }
         else if(gateId == -2)
         {
             // I am not the leader
+            Serial.println("I am not the leader");
             return;
         }
-        SendMessage(UI, DIVIDER_ID, cusListener->HandleUIRequest(data));
+        Serial.println("Sending gate id to UI");
+        SendUIMessage(UI, DIVIDER_ID, ALLOC, std::to_string(cusListener->HandleUIRequest(data)));
+
+        // TODO: Send amount of people to the gate!!!!!!!!!!!!!!!
         break;
     default:
         break;
