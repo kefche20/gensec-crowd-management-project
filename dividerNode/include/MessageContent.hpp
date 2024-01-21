@@ -26,7 +26,8 @@ enum CONTENT_TYPE
    DES_ID,
    MSG,
    DATA1,
-   DATA2
+   DATA2,
+   DATA_UI
 };
 
 enum DividerBoardcastMessage

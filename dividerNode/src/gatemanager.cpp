@@ -36,17 +36,19 @@ std::pair<int, int> GateManager::GetLeastBusyGate()
     std::pair<int, int> leastBusyGate;
     leastBusyGate.first = -1; // first is id
     leastBusyGate.second = 0; // second is busyRate
-
+    Serial.println("GetLeastBusyGate");
     for (auto &gate : gates)
     {
+            Serial.println("1");
         if (gate.GetBusyRate() < leastBusyGate.second && gate.GetOpenSta())
         // update the id and rate of the gate with lower busy rate
         {
+                Serial.println("2");
             leastBusyGate.first = gate.GetId();
             leastBusyGate.second = gate.GetBusyRate();
         }
     }
-
+        Serial.println("3");
     return leastBusyGate;
 }
 

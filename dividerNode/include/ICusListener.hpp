@@ -5,7 +5,8 @@ class ICusListener
 {
 public:
     // handle the request from UI
-    virtual void HandleCustomerRequest(bool reqSta) = 0;
+    virtual void HandleCustomerRequest(int people_waiting) = 0;
+    virtual int HandleUIRequest(int people_waiting) = 0;
 };
 
 #endif
