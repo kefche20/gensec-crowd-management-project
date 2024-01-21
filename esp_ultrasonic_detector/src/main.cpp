@@ -5,7 +5,7 @@
 
 WiFiClient esp_client;
 PubSubClient mqttClient(esp_client);
-// MyAirportMQTT my_airport_mqtt(esp_client, MY_MQTT_BROKER, MY_NET_PORT, MY_ID, MY_MQTT_USERNAME, MY_MQTT_PASSWORD, callback);
+// MyAirportMQTT my_airport_mqtt(esp_client, MY_MQTT_BROKER, MY_NET_PORT, MY_ID);
 
 MyGateSystemManager myGate;
 uint8_t reg_state;
@@ -35,6 +35,11 @@ void setup()
   //   // NOTE - Wait for connection or timeout.
   // }
 
+  ///////////////////////////////////////////////////////////////////////////
+  myGate.myGateSetup();
+  reg_state = myGate.getRegisterState();
+  // my_airport_mqtt.setupMqtt(callback);
+  // // my_airport_mqtt.connectToMyNetwork();
   // if (my_airport_mqtt.subscribeToMyNetwork(MY_GATE_TOPIC))
   // {
   //   Serial.println("Subscribed!");
@@ -43,9 +48,7 @@ void setup()
   // {
   //   Serial.println("Fail!");
   // }
-  ///////////////////////////////////////////////////////////////////////////
-  myGate.myGateSetup();
-  reg_state = myGate.getRegisterState();
+  //////////////////////////////////////////////////////////////////////////
   Serial.println("Sensor Demo Start!");
   Serial.begin(9600);
   WiFi.begin(MY_NET_SSID, MY_NET_PASSWORD);
@@ -102,18 +105,18 @@ void loop()
   if (current_time - wifi_start_time >= COM_DELAY)
   {
     mqttClient.loop();
-    //   if (WiFi.status() != WL_CONNECTED)
-    //   {
-    //     Serial.println("Connection lost, restarting device!");
-    //     ESP.restart();
-    //   }
+      // if (WiFi.status() != WL_CONNECTED)
+      // {
+      //   Serial.println("Connection lost, restarting device!");
+      //   ESP.restart();
+      // }
 
-    //   if (!my_airport_mqtt.amIconnected())
-    //   {
-    //     Serial.println("re-subscribing.");
-    //     my_airport_mqtt.connectToMyNetwork();
-    //     my_airport_mqtt.subscribeToMyNetwork(MY_GATE_TOPIC);
-    //   }
+      // if (!my_airport_mqtt.amIconnected())
+      // {
+      //   Serial.println("re-subscribing.");
+      //   my_airport_mqtt.connectToMyNetwork();
+      //   my_airport_mqtt.subscribeToMyNetwork(MY_GATE_TOPIC);
+      // }
     wifi_start_time = current_time;
   }
 

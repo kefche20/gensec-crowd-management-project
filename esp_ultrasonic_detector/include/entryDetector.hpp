@@ -49,8 +49,9 @@
 #define COMMAND_TO_INFORM "3"
 #define COMMAND_TO_ADD "5"
 
-#define MY_ID "101"
-#define DIV_ID "100"
+#define MY_ID "201"
+#define DIV_ID "200"
+#define ALL_ID "000"
 
 #define COM_DELAY 1000
 #define DETECT_DELAY 100

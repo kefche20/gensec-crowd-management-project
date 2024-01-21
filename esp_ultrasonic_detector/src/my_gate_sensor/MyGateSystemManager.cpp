@@ -201,8 +201,9 @@ void MyGateSystemManager::readInputSourceAndDestination(String message)
     indicator_1 = message.indexOf(ARROW_CHAR);
     my_source_id = message.substring(0, indicator_1);
     indicator_2 = message.indexOf(SPLIT_CHAR, indicator_1 + 1);
-    my_destination_id = message.substring(indicator_1 + 1, indicator_2 + 1);
+    my_destination_id = message.substring(indicator_1 + 1, indicator_2);
     my_message = message.substring(indicator_2 + 1);
+    Serial.print(my_destination_id);
 
     readCommandAndValue(my_message);
 }
@@ -224,7 +225,10 @@ void MyGateSystemManager::readCommandAndValue(String message)
         my_input_command = message;
     }
 
-    operateQueue();
+    if (my_destination_id == MY_ID || my_destination_id == ALL_ID)
+    {
+        operateQueue();
+    }
 }
 
 void MyGateSystemManager::operateQueue()
@@ -255,7 +259,7 @@ void MyGateSystemManager::operateQueue()
             register_state = 1;
         }
     }
-    
+
     if (my_input_command == COMMAND_TO_ADD)
     {
         if (addQueueNr() == false)

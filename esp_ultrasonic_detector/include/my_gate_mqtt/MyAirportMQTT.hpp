@@ -7,7 +7,7 @@ class MyAirportMQTT : public IMyNetworkConnector
 {
 private:
     PubSubClient my_mqtt_client;
-    Client &esp_client;
+    WiFiClient &esp_client;
     const char *my_server;
     int my_net_port;
     const char *my_id;
@@ -16,11 +16,12 @@ private:
 
 public:
     MyAirportMQTT *next;
-    MyAirportMQTT(Client &, const char *, int, const char *, const char *, const char *, void (*externalCallback)(char *, byte*, unsigned int));
+    MyAirportMQTT(WiFiClient &, const char *, int, const char *);
     ~MyAirportMQTT();
     
     void setServer(const char *) override;
     void setPort(int) override;
+    void setupMqtt(void (*externalCallback)(char *, byte *, unsigned int)) override;
     void myCallBackFunction(MQTT_CALLBACK_SIGNATURE) override;
     void connectToMyNetwork() override;
     void myNetLoop() override;

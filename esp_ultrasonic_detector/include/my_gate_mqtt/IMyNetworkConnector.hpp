@@ -8,6 +8,7 @@
 class IMyNetworkConnector : public IMyNetCommPublisher, public IMyNetCommSubscriber
 {
 public:
+    virtual void setupMqtt(void (*externalCallback)(char *, byte *, unsigned int)) = 0;
     virtual void setServer(const char *) = 0;
     virtual void setPort(int) = 0;
     virtual void myCallBackFunction(MQTT_CALLBACK_SIGNATURE) = 0;
