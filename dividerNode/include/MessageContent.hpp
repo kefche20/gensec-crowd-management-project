@@ -43,7 +43,9 @@ enum DividerDirectMessage
 {
    FELLOW_MEMBER,
    FELLOW_LEADER,
-   FELLOW_NEUTRAL
+   FELLOW_NEUTRAL,
+   ACTIVATE,
+   DEACTIVATE
 };
 
 enum GateMessage

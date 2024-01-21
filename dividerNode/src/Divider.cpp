@@ -2,7 +2,7 @@
 #define MAX_BUSY_RATE 100
 #define MIN_BUSY_RATE 0
 
-Divider::Divider(int id, bool isLeader) : id(id), isLeader(isLeader)
+Divider::Divider(int id, bool isLeader) : id(id), isLeader(isLeader), isActive(isActive)
 {
     // intialize leastBusyGate id & value;
     leastBusyGate.first = 000;
@@ -13,10 +13,6 @@ Divider::~Divider()
 {
 }
 
-int Divider::GetId()
-{
-    return id;
-}
 
 bool Divider::operator==(int id)
 {
@@ -27,6 +23,12 @@ bool Divider::operator==(const Divider &divider)
 {
     return this->id == divider.id;
 }
+
+int Divider::GetId()
+{
+    return id;
+}
+
 
 bool Divider::IsLeader()
 {
@@ -51,6 +53,16 @@ void Divider::SetLeader(RoleMode role)
         isLeader = false;
         break;
     }
+}
+
+bool Divider::IsAcive()
+{
+    return isActive;
+}
+
+void Divider::SetActiveState(bool sta)
+{
+     isActive = sta;
 }
 
 bool Divider::UpdateLeastBusyGate(std::pair<int, int> newLeastBusyGate)

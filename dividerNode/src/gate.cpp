@@ -63,5 +63,5 @@ int Gate::getLineCount()
 
 int Gate::GetBusyRate()
 {
-  return peopleCount / maxCapacity;
+  return (int)(((float)peopleCount / (float)maxCapacity) * 100.0);
 }

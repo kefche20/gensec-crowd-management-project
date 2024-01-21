@@ -46,7 +46,7 @@ void setup()
   // interface between manager classes and messagers
   messager.SetListener((IDivListener *)&dividerManager, (IGateListener *)&gateManager, (ICusListener *)&customerManager); // TODO add listeners here
   dividerManager.SetSender((ISender *)&messager);
-  dividerManager.SetLocalCollector((IDataCollector *)&gateManager);
+  dividerManager.SetLocalCollector((ILocalCollector *)&gateManager);
   gateManager.SetSender((ISender *)&messager);
 
   // //network connection
@@ -57,7 +57,7 @@ void setup()
   // //topic subscriptions
   messager.ConnectTopic(topic_dividers_role);
   messager.ConnectTopic(topic_dividers_alive);
-//  messager.ConnectTopic(topic_gates);
+  messager.ConnectTopic(topic_gates);
 
 }
 

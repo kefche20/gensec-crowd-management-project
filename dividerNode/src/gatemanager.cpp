@@ -12,6 +12,11 @@ void GateManager::SetSender(ISender *newSender)
     sender = newSender;
 }
 
+void GateManager::SetActivateState(bool sta)
+{
+    isActive = sta;
+}
+
 void GateManager::SetGateState(int gateId, bool sta)
 {
     auto gate = std::find(gates.begin(), gates.end(), gateId);
@@ -61,7 +66,9 @@ bool GateManager::Add(int id)
     {
         gates.push_back(Gate(id));
         metaAliveTracker.Add(id);
+        metaAliveTracker.StartTracking(id);
         sta = true;
+        Serial.println("add gate success");
     }
 
     return sta;
@@ -120,22 +127,20 @@ void GateManager::GateChats()
     switch (traffic.state)
     {
     case IDLE_T:
+    {
         if (traffic.IsNewState())
         {
             // Serial.println("idle state!");
             traffic.ClearEntryFlag();
         }
 
-        // int numOfActiveGate = GetActiveGate();
-        // int openGateId = openAnIdleGate();
-
-        // if (numOfActiveGate != 0)
-        // {
-        //     sender->SendMessage(GATE, openGateId, OPENGATE);
-        //     traffic.state = NORMAL;
-        // }
+        if (gates.size() != 0 && isActive)
+        {
+            traffic.state = NORMAL;
+        }
 
         break;
+    }
     case NORMAL:
     {
         if (traffic.IsNewState())
@@ -144,30 +149,36 @@ void GateManager::GateChats()
             traffic.ClearEntryFlag();
         }
 
-        // get the free space rate
-        // int freeSpaceRate = GetFreeSpaceRate();
-
-        // int numOfActiveGate = GetActiveGate();
+        int numOfActiveGate = GetActiveGate();
+        int freeSpaceRate = GetFreeSpaceRate();
 
         // check general state of active gates
-        if ( GetActiveGate() < gates.size() && GetActiveGate() > 1)
+        if (numOfActiveGate < gates.size() && numOfActiveGate > 1)
         {
             generalState = PARTY_DUTY;
         }
 
+        if (!isActive || gates.size() == 0)
+        // stop the open/close mechanism when divider is deactivate and close all gate 
+        {
+            CloseAllGate();
+            sender->SendMessage(GATE, 000, 000, CLOSEGATE);
+            traffic.state = IDLE_T;
+        }
+
         // more gate in duty
-        if (GetFreeSpaceRate() < openThresholdRate && generalState != ALL_IN_DUTY)
+        if (freeSpaceRate < openThresholdRate && generalState != ALL_IN_DUTY)
         {
             traffic.state = CROWD;
         }
 
         // when free space is less than a
-        if (GetFreeSpaceRate() > closeThresholdRate && generalState != ONE_IN_DUTY)
+        if (freeSpaceRate > closeThresholdRate && generalState != ONE_IN_DUTY)
         {
             traffic.state = UNOCCUPIED;
         }
+        break;
     }
-    break;
 
     case CROWD:
         // whenever the gate manager is in this state, another new gate will be open
@@ -183,14 +194,14 @@ void GateManager::GateChats()
             // open more gate
             if (openGateId != -1)
             {
-                sender->SendMessage(GATE, openGateId, OPENGATE);
+                sender->SendMessage(GATE, 000, openGateId, OPENGATE);
             }
             else
             {
                 generalState = ALL_IN_DUTY;
             }
 
-            if (GetFreeSpaceRate() < openThresholdRate || generalState == ALL_IN_DUTY)
+            if (GetFreeSpaceRate() > openThresholdRate || generalState == ALL_IN_DUTY)
             {
                 traffic.state = NORMAL;
             }
@@ -209,7 +220,7 @@ void GateManager::GateChats()
         if (GetActiveGate() > 1)
         {
             int closeGateId = closeAnIdleGate();
-            sender->SendMessage(GATE, closeGateId, CLOSEGATE);
+            sender->SendMessage(GATE, 000, closeGateId, CLOSEGATE);
         }
         else
         {
@@ -217,7 +228,7 @@ void GateManager::GateChats()
         }
 
         // close gate
-        if (GetFreeSpaceRate() > closeThresholdRate || generalState == ALL_FREE)
+        if (GetFreeSpaceRate() < closeThresholdRate || generalState == ALL_FREE)
         {
             traffic.state = NORMAL;
         }
@@ -235,13 +246,15 @@ void GateManager::HandleGateRegister(int id)
     // add new gate to list
     Serial.print("add new gate: ");
     Serial.println(id);
-    if (Add(id)) 
-    //only response ACK if add successfully, (in the case there is the ghost gate with the same id it will be automatically by heartbeat mechanism => real gate might have to send the register msg at around 3 times to wait until ghost gate is Added)
+    if (Add(id))
+    // only response ACK if add successfully, (in the case there is the ghost gate with the same id it will be automatically by heartbeat mechanism => real gate might have to send the register msg at around 3 times to wait until ghost gate is Added)
     {
-        sender->SendMessage(GATE, id, ACK);
+        Serial.println("send ack------------!");
+        sender->SendMessage(GATE, 000, id, ACK);
     }
-    else 
+    else
     {
+        Serial.println("sth go wrong----------!");
         // sender->SendMessage(GATE, id, NACK);
     }
 }
@@ -258,6 +271,7 @@ void GateManager::HandleGateDataBeats(int gateId, int numOfPeople)
     }
     else
     {
+        HandleGateRegister(gateId);
         // no id found
     }
 }
@@ -283,11 +297,19 @@ float GateManager::GetFreeSpaceRate()
 
     for (auto &gate : gates)
     {
-        sumOfpeople += gate.getLineCount();
-        totalSpace += gate.GetMaxCapacity();
+        if (gate.GetOpenSta())
+        // only check the rate of open gates
+        {
+            sumOfpeople += gate.getLineCount();
+            totalSpace += gate.GetMaxCapacity();
+        }
     }
+    float freeSpaceRate = 0;
 
-    float freeSpaceRate = ((float)sumOfpeople / (float)totalSpace) * 100.0;
+    if (totalSpace != 0)
+    {
+        float freeSpaceRate = ((float)sumOfpeople / (float)totalSpace) * 100.0;
+    }
 
     return freeSpaceRate;
 }
@@ -315,11 +337,22 @@ int GateManager::closeAnIdleGate()
     {
         if (gate.GetOpenSta())
         {
-            gate.SetOpenSta(true);
+            gate.SetOpenSta(false);
             closeGateId = gate.GetId();
             break; // Close only one gate at a time
         }
     }
 
     return closeGateId;
+}
+
+void GateManager::CloseAllGate()
+{
+    for (auto &gate : gates)
+    {
+        if (gate.GetOpenSta())
+        {
+            gate.SetOpenSta(false);
+        }
+    }
 }

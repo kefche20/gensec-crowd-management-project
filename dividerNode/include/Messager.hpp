@@ -53,7 +53,7 @@ public:
         mqttClient = new PubSubClient(*espClient);
     }
 
-    Messager(PubSubClient *mqttClient) : divListener(nullptr), gateListener(nullptr), cusListener(nullptr)
+    Messager(PubSubClient *newMqttClient) : mqttClient(newMqttClient),divListener(nullptr), gateListener(nullptr), cusListener(nullptr)
     {
     }
 
@@ -110,11 +110,14 @@ private:
         {
         case SRC_ID:
             startPos = 1;
-            readLen = ID_LENGTH;
+            endPos = msg.find('>');
+            readLen = endPos - startPos;
             break;
         case DES_ID:
             startPos = msg.find('>') + 1;
-            readLen = ID_LENGTH;
+            endPos = msg.find('-');
+            readLen = endPos - startPos;
+
             break;
         case MSG:
             startPos = msg.find('-') + 1;

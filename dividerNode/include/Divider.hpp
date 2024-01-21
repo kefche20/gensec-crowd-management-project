@@ -11,39 +11,39 @@
 class Divider
 {
 private:
-    //basic info
+    // basic info
     int id;
     bool isLeader;
+    bool isActive;
 
-    //data
-    std::pair<int,int> leastBusyGate; //first is id, second is the rate value  
+    // data
+    std::pair<int, int> leastBusyGate; // first is id, second is the rate value
 
 public:
     Divider(int id, bool isLeader);
 
     ~Divider();
 
-    int GetId();
-
     // overload operator ==
     bool operator==(int id);
 
     bool operator==(const Divider &divider);
 
+    int GetId();
+
     // get the role sta if leader
     bool IsLeader();
 
-    // set the role state
     void SetLeader(RoleMode role);
 
+    bool IsAcive();
+
+    void SetActiveState(bool sta);
+
+    // set the role state
     bool UpdateLeastBusyGate(std::pair<int, int> leastBusyGate);
 
-     std::pair<int, int> GetGateData();
-
+    std::pair<int, int> GetGateData();
 };
-
-
-
-
 
 #endif

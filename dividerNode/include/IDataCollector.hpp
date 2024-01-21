@@ -13,6 +13,12 @@ class IDataCollector
 
 };
 
+class ILocalCollector: public IDataCollector 
+{
+    public:
+    virtual void SetActivateState(bool sta) = 0;
+};
+
 class IRemoteDataCollector : public IDataCollector
 {
    public: 

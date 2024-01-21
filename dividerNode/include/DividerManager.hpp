@@ -8,6 +8,7 @@
 #include "Heartbeat.hpp"
 #include "Timer.hpp"
 #include "Divider.hpp"
+#include "Traffic.hpp"
 
 #include "queue"
 
@@ -35,16 +36,19 @@ private:
     std::list<Divider> dividers;
     hrtbt::MetaAliveTracker metaAliveTracker;
 
-    // interface with messager and
+    // control the divider activation - only use when is the master
+    TrafficState trafficState;
+
+    // interface with messager and gata manager
     ISender *sender;
-    IDataCollector *localCollector;
+    ILocalCollector *localCollector;
 
 public:
     DividerManager(int id);
 
     bool SetSender(ISender *sender);
 
-    bool SetLocalCollector(IDataCollector *locaCollector);
+    bool SetLocalCollector(ILocalCollector *locaCollector);
 
     std::pair<int, int> GetLeastBusyGate() override;
 
@@ -59,8 +63,6 @@ public:
     // divider request based on role
     void dividersChat();
 
-    // divider response
-
     // TOPIC: Roles
     // handle message: FELLOW_MEMBER + FELLOW_LEADER
     void HandleDiscoverResult(int dividerId, RoleMode dividerRole) override;
@@ -70,6 +72,9 @@ public:
 
     // handle message: NEW_LEADER + NEW_MEMBER
     void HandleNewLeader(int dividerId) override;
+
+    // handle message: ACTIVATE - DEACTIVATE
+    void HandleActivateCommand(bool sta) override;
 
     // TOPIC: leader alives
     // handle message: LEADER_ALIVE
@@ -93,6 +98,16 @@ private:
     bool IsMemberExist(int checkId);
 
     bool SetDividerRole(int id, RoleMode isLeader);
+
+    // ACTIVATE & DEACTIVATE divider logic
+    int GetGeneralBusyRate();
+
+    int ActivateADivider();
+
+    int DeactivateADivider();
+
+    // logic of acitivating and deactivating - used in LEDADER STATE ONLY
+    void ControlDividerActivation();
 };
 
 #endif
