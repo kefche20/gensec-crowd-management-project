@@ -10,8 +10,6 @@
 
 #include <string>
 
-
-
 // Heartbeat
 #define BEATRATE 5000
 #define MAXOFFSET 10000
@@ -23,8 +21,8 @@
 #define TOPIC_DIVIDERS 1
 
 // free rate to open or close a gate
-#define OPEN_THRESHOLD_RATE 20
-#define CLOSE_THRESHOLD_RATE 80
+#define OPEN_THRESHOLD_RATE 80
+#define CLOSE_THRESHOLD_RATE 20
 
 WiFiClient espClient;
 // PubSubClient *mqttClient = new PubSubClient(espClient);

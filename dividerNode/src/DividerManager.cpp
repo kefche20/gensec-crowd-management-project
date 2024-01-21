@@ -133,15 +133,13 @@ void DividerManager::dividersChat()
         if (role.IsNewMode())
         // check if become the next leader
         {
-            Serial.println("being neutral!");
-
+            role.ClearEntryFlag();
             if (IsNextLeader())
             {
                 Serial.println("being leader!");
                 sender->SendMessage(DIVIDER_ROLE, id, NEW_LEADER);
                 role.UpdateMode(LEADER);
             }
-            role.ClearEntryFlag();
         }
 
         if (role.IsAssignedMember())
@@ -159,7 +157,7 @@ void DividerManager::dividersChat()
             Serial.println("being member!");
             // destroy all current heart
             metaAliveTracker.RemoveAll();
-
+            localCollector->SetActivateState(true);
             // add and start tracking the leader heart
             metaAliveTracker.Add(SearchLeaderId());
             metaAliveTracker.StartTracking(SearchLeaderId());
@@ -194,7 +192,10 @@ void DividerManager::dividersChat()
         if (role.IsNewMode())
         // begin the heart beat timer
         {
+            Serial.println("activate local gate manager!!!!!!!!!!");
+            localCollector->SetActivateState(true);
             Serial.println("being leader!");
+            // activate the local divider - gatemanager
 
             for (auto &divider : dividers)
             // add heart and start tracking all members
@@ -202,8 +203,12 @@ void DividerManager::dividersChat()
                 if (!divider.IsLeader())
                 // REVIEW - how could the member be a leader error already handle?
                 {
+                    // turn off all
                     metaAliveTracker.Add(divider.GetId());
                     metaAliveTracker.StartTracking(divider.GetId());
+
+                    // deactivate all member
+                    sender->SendMessage(DIVIDER_ROLE, id, divider.GetId(), DEACTIVATE);
                 }
             }
 
@@ -214,17 +219,11 @@ void DividerManager::dividersChat()
             role.ClearEntryFlag();
         }
 
+        ControlDividerActivation();
+
         if (timer.isTimeOut())
         // leader sent heartbeat to notify member of its alive
         {
-            //  Serial.println("leader alive-------------: ");
-
-            // Serial.println("number of divider member: ");
-            // Serial.println(dividers.size());
-            // for(auto &divider:dividers)
-            // {
-
-            // }
 
             sender->SendMessage(DIVIDER_ALIVE, id, LEADER_ALIVE);
             timer.Reset();
@@ -446,7 +445,7 @@ int DividerManager::GetGeneralBusyRate()
     }
 
     // calcuate the general busy rate
-    return (int)(((float)sum / (100.0 * numOfActiveDivider)) * 100);
+    return (int)(((float)sum / (100.0 * numOfActiveDivider)) * 100.0);
 }
 
 int DividerManager::ActivateADivider()
@@ -508,17 +507,18 @@ void DividerManager::ControlDividerActivation()
 
         break;
     case CROWD:
+    //REVIEW - it will get stuck at the crowd if still needed for divider active 
     {
-        // search for a divider to activate 
+        // search for a divider to activate
         int activatedId = ActivateADivider();
 
         if (activatedId != -1)
-        //send message to activate the divider if can find more divider is available for activate  
+        // send message to activate the divider if can find more divider is available for activate
         {
             sender->SendMessage(DIVIDER_ROLE, id, activatedId, ACTIVATE);
         }
 
-        if (GetGeneralBusyRate() < 50)
+        if (GetGeneralBusyRate() < 20)
         // stay activate more divider until the busy rate of all least busy gate smaller than 50%
         {
             trafficState = NORMAL;
@@ -527,15 +527,14 @@ void DividerManager::ControlDividerActivation()
     break;
     case UNOCCUPIED:
     {
-        //search for a divider to deactivate 
+        // search for a divider to deactivate
         int deactivateId = DeactivateADivider();
 
-        if(deactivateId != -1)
-        //send message to deactivate the divide if can find more divider is available for deactivate 
+        if (deactivateId != -1)
+        // send message to deactivate the divide if can find more divider is available for deactivate
         {
-            sender->SendMessage(DIVIDER_ROLE,id,deactivateId,DEACTIVATE);
+            sender->SendMessage(DIVIDER_ROLE, id, deactivateId, DEACTIVATE);
         }
-
 
         if (GetGeneralBusyRate() > 20)
         // staty deactivate more divider until the busy rate of all least busy gate larger than 20%

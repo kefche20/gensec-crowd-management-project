@@ -1,4 +1,5 @@
 #include "Gate.hpp"
+#include "Arduino.h"
 Gate::Gate(int id) : id(id), isOpen(false), peopleCount(0)
 {
 }
@@ -50,7 +51,8 @@ bool Gate::refreshCount(int count)
   {
       return false;
   }
-
+    
+  Serial.println("refresh people count---------!");
   peopleCount = count;
 
   return true;

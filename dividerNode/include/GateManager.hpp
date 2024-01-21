@@ -84,7 +84,7 @@ private:
   // bool IsGateIdExist();
 
   // get the free space comparing to the total capacity
-  float GetFreeSpaceRate();
+  float GetBusyRate();
 
   // get the number of open gate
   int GetActiveGate();
