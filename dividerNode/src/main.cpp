@@ -10,8 +10,7 @@
 
 #include <string>
 
-// Divider
-#define DIVIDER_ID 100
+
 
 // Heartbeat
 #define BEATRATE 5000
@@ -47,7 +46,7 @@ void setup()
   // interface between manager classes and messagers
   messager.SetListener((IDivListener *)&dividerManager, (IGateListener *)&gateManager, (ICusListener *)&customerManager); // TODO add listeners here
   dividerManager.SetSender((ISender *)&messager);
-  dividerManager.SetLocalCollector((IDataCollector *)&gateManager);
+  dividerManager.SetLocalCollector((ILocalCollector *)&gateManager);
   gateManager.SetSender((ISender *)&messager);
 
   // //network connection

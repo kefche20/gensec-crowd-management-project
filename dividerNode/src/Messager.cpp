@@ -106,6 +106,8 @@ bool Messager::SendMessage(Topic topic, int srcId, int destId, int content)
 {
     const char *selectTopic = "default";
     selectTopic = SelectTopic(topic);
+    Serial.println("selectTopic-------: ");
+    Serial.println(selectTopic);
 
     char data[200];
     sprintf(data, "&%s>%s-%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str());
@@ -120,7 +122,7 @@ bool Messager::SendMessage(Topic topic, int srcId, int destId, int content, int 
     selectTopic = SelectTopic(topic);
 
     char data[200];
-    sprintf(data, "&%s>%s-%s+%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str(), std::to_string(sendedData).c_str());
+    sprintf(data, "&%s>%s-%s+%s:;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str(), std::to_string(sendedData).c_str());
     mqttClient->publish(selectTopic, data);
 
     return true;
@@ -132,7 +134,7 @@ bool Messager::SendMessage(Topic topic, int srcId, int destId, int content, std:
     const char *selectTopic = "default";
     selectTopic = SelectTopic(topic);
     char data[200];
-    sprintf(data, "&%s>%s-%s+%s:%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str(), std::to_string(pairData.first).c_str(), std::to_string(pairData.second).c_str());
+    sprintf(data, "&%s>%s-%s+%s:%s@;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str(), std::to_string(pairData.first).c_str(), std::to_string(pairData.second).c_str());
 
     mqttClient->publish(selectTopic, data);
 
@@ -205,12 +207,16 @@ void Messager::HandleDirectMessage(int srcId, DividerDirectMessage msgCode)
     case FELLOW_MEMBER:
     case FELLOW_NEUTRAL:
         divListener->HandleDiscoverResult(srcId, MEMBER);
-
         break;
     case FELLOW_LEADER:
         divListener->HandleDiscoverResult(srcId, LEADER);
         break;
 
+    case ACTIVATE:
+        divListener->HandleActivateCommand(true);
+        break;
+    case DEACTIVATE:
+        divListener->HandleActivateCommand(false);
         break;
     }
 }
@@ -245,13 +251,13 @@ void Messager::ReadDividerAliveMessage(std::string msg)
 
     if (srcId == divListener->GetId())
     {
-         return;
+        return;
     }
 
     switch (msgCode)
     {
     case LEADER_ALIVE:
-        
+
         divListener->HandleLeaderAlive(srcId);
         break;
     case MEMBER_ALIVE:
@@ -344,8 +350,8 @@ void Messager::HandleUIMessage(UIMessage msgCode, int data)
         cusListener->HandleCustomerRequest(true);
         break;
 
-    case ACK:
-        cusListener->HandleCustomerRequest(false);
+    // case ACK:
+    //     cusListener->HandleCustomerRequest(false);
     default:
         break;
     }
@@ -363,6 +369,9 @@ const char *Messager::SelectTopic(Topic topic)
         break;
     case DIVIDER_ALIVE:
         return topic_dividers_alive;
+        break;
+    case GATE:
+        return topic_gates;
         break;
     default:
         return "default";

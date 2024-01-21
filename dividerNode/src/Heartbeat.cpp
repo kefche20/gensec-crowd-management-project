@@ -71,7 +71,7 @@ namespace hrtbt
             return false;
         }
 
-        // Serial.print("start create task tracking -------------r: ");
+        Serial.print("start create task tracking -------------: ");
         Serial.println(beatId);
 
         // creating beat tracker task
@@ -89,7 +89,7 @@ namespace hrtbt
         NodeAliveTracker *tracker = static_cast<NodeAliveTracker *>(parameter);
         TrackState state = READ_ID;
 
-        Serial.print("start beat tracking task---: ");
+        Serial.print("start beat tracking task-------------: ");
         Serial.println(tracker->beatId);
         // restart the intial beat record to the current time
         tracker->heartbeat.RefreshLastBeat();
@@ -178,25 +178,15 @@ namespace hrtbt
     {
         bool sta = false;
 
-        Serial.print("meta start tracking the member id: ");
-        Serial.println(id);
         // search for the tracker
         auto result = std::find(aliveTrackers.begin(), aliveTrackers.end(), id);
 
         if (result != aliveTrackers.end())
         // start the tracking when find out the tracker
         {
-            Serial.println("found the live tracker in list to start -------: ");
-            Serial.println(result->GetId());
-            Serial.println("lenght of list-------: ");
-            Serial.println(aliveTrackers.size());
-
             sta = result->StartTracking();
         }
-        else
-        {
-            Serial.println("could not find the live tracker with the corresponding id!");
-        }
+    
 
         return sta;
     }
@@ -219,11 +209,6 @@ namespace hrtbt
         int checkedId = 0;
         // check the queue in the top
         xQueuePeek(beatQueue, (void *)&checkedId, 0);
-
-        // Serial.println("result of track id: ");
-        // Serial.println(id);
-        // Serial.println("got the answer");
-        // Serial.println(checkedId);
 
         if (checkedId == id)
         // only remove the top beat id when the id correct
@@ -255,13 +240,9 @@ namespace hrtbt
             // check the top/front beat id in the queue and remove it if the node tracker of that id doesn't exist anymore
             if (xQueuePeek(meta->beatQueue, (void *)&checkedId, 0))
             {
-                // Serial.print("filter id: ");
-                // Serial.println(checkedId);
-
+                
                 if (!meta->IsIdExist(checkedId))
                 {
-                    Serial.print("##################throw trash id: ");
-                    Serial.println(checkedId);
                     xQueueReceive(meta->beatQueue, (void *)&checkedId, 0);
                 }
             }

@@ -41,17 +41,20 @@ public:
 
     // handle discover response
     virtual void HandleDiscoverResult(int id, RoleMode role) = 0;
+
+    // handle activate command for the divider
+    virtual void HandleActivateCommand(bool sta) = 0;
 };
 
 // REVIEW - make an inheritant form stateControl
 class RoleControl
 {
 private:
-    //basic role mode data
+    // basic role mode data
     RoleMode mode;
     RoleMode preMode;
-    
-    //special assigned/trigger condition for changing mode/state
+
+    // special assigned/trigger condition for changing mode/state
     bool isAssignedMember;
     bool isLostedLeader;
 
@@ -59,7 +62,7 @@ public:
     RoleControl();
 
     void SetAssignedMember();
-        
+
     void SetLostLeader();
 
     bool IsAssignedMember();
@@ -67,7 +70,7 @@ public:
     bool IsLostedLeader();
 
     bool IsNewMode();
-    
+
     RoleMode GetMode();
 
     void UpdateMode(RoleMode newMode);

@@ -12,7 +12,8 @@
 #include "config.hpp"
 
 #include "Gate.hpp"
-#include "heartbeat.hpp"
+#include "Heartbeat.hpp"
+#include "Traffic.hpp"
 
 #include "IGateListener.hpp"
 #include "INodeManager.hpp"
@@ -26,49 +27,7 @@
   3. template code for the mode of state machine
 */
 
-enum GeneralGatesState
-{
-  ALL_IN_DUTY,
-  PARTY_DUTY,
-  ONE_IN_DUTY,
-  ALL_FREE
-};
 
-enum TrafficState
-{
-  VOID_T,
-  IDLE_T,
-  NORMAL,
-  CROWD,
-  UNOCCUPIED // different word use
-};
-
-// TODO - check how to prevent from using
-struct Traffic
-{
-public:
-  TrafficState state;
-  TrafficState preState;
-
-  Traffic() : state(IDLE_T), preState(VOID_T)
-  {
-  }
-
-  bool IsNewState()
-  {
-    return state != preState;
-  }
-
-  void UpdateState(TrafficState newState)
-  {
-    state = newState;
-  }
-
-  void ClearEntryFlag()
-  {
-    preState = state;
-  }
-};
 
 /*
   //TODO:
@@ -76,16 +35,17 @@ public:
 
 */
 
-class GateManager : public IGateListener, public INodeManager, public IDataCollector
+class GateManager : public IGateListener, public INodeManager, public ILocalCollector
 {
 private:
   int maxGateNum;
+  int isActive;
 
   int openThresholdRate;  // Threshold to open a new gate
   int closeThresholdRate; // Threshold to close an idle gate
   std::list<Gate> gates;
 
-  GeneralGatesState generalState;
+  GeneralDutyState generalState;
   Traffic traffic; // keep track on close/open gate logic
   hrtbt::MetaAliveTracker metaAliveTracker;
 
@@ -96,6 +56,8 @@ public:
   GateManager(int maxGateNum, int openThreshold, int closeThreshold);
 
   void SetSender(ISender *sender);
+
+ void  SetActivateState(bool sta) override;
 
   // Open the gate with the given ID
   void SetGateState(int id, bool sta);
@@ -132,6 +94,8 @@ private:
 
   // Close an idle gate
   int closeAnIdleGate();
+
+  void CloseAllGate();
   // Additional functionalities as needed
 };
 

@@ -43,11 +43,14 @@ enum DividerDirectMessage
 {
    FELLOW_MEMBER,
    FELLOW_LEADER,
-   FELLOW_NEUTRAL
+   FELLOW_NEUTRAL,
+   ACTIVATE,
+   DEACTIVATE
 };
 
 enum GateMessage
 {
+   ACK = 0,
    OPENGATE = 1,
    CLOSEGATE = 2,
    DATA = 3, // REVIEW - chaning message name from NUMOFPEOPLE to DATA
@@ -61,7 +64,7 @@ enum GateMessage
 enum UIMessage
 {
    CHECK_IN,
-   ACK,
+   // ACK,
 };
 
 #endif
