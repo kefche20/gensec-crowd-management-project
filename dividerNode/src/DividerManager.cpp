@@ -177,6 +177,9 @@ void DividerManager::dividersChat()
             // / Serial.println(dividers.size());
 
             sender->SendMessage(DIVIDER_ALIVE, id, SearchLeaderId(), MEMBER_ALIVE, localCollector->GetLeastBusyGate());
+            Serial.println(localCollector->GetLeastBusyGate().first);
+            Serial.println(localCollector->GetLeastBusyGate().second);
+
             timer.Reset();
         }
 
@@ -459,9 +462,6 @@ int DividerManager::GetGeneralBusyRate()
         }
     }
 
-    Serial.println("Get general busy rate--------------: ");
-    Serial.println(sum);
-    Serial.println(numOfActiveDivider);
     int busyRate = 100;
     if (numOfActiveDivider != 0)
     {
@@ -515,7 +515,13 @@ void DividerManager::ControlDividerActivation()
         }
 
         if (dividers.size() > 0 && localCollector->IsBusy())
+        // only start the logic when the current gate is too busy
         {
+            for(auto &divider:dividers)
+            {
+                divider.SetActiveState(false);
+                sender->SendMessage(DIVIDER_ROLE,id,divider.GetId(),DEACTIVATE);
+            }
             trafficState = NORMAL;
         }
 
@@ -528,9 +534,10 @@ void DividerManager::ControlDividerActivation()
             preState = trafficState;
         }
 
-        if (dividers.size() == 0 || !localCollector->IsBusy())
+        if (dividers.size() == 0 && localCollector->IsFree())
         // go back to idle if normal is not busy anymore
         {
+            // TODO: turn off all divider
             trafficState = IDLE_T;
         }
 
@@ -542,12 +549,13 @@ void DividerManager::ControlDividerActivation()
             preBusyRate = busyRate;
         }
 
-        if (GetGeneralBusyRate() > 80)
+        if (busyRate > 80 && localCollector->GetBusyRate() > 80)
         {
             trafficState = CROWD;
         }
 
-        else if (GetGeneralBusyRate() < 20 )
+        else if (busyRate < 30 && busyRate < 30)
+        // only close more gate when main divider is less busy
         {
             trafficState = UNOCCUPIED;
         }
@@ -594,7 +602,7 @@ void DividerManager::ControlDividerActivation()
             sender->SendMessage(DIVIDER_ROLE, id, deactivateId, DEACTIVATE);
         }
 
-        if (GetGeneralBusyRate() > 20)
+        if (GetGeneralBusyRate() > 30)
         // staty deactivate more divider until the busy rate of all least busy gate larger than 20%
         {
             trafficState = NORMAL;

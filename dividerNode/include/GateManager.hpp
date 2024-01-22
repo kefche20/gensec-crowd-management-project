@@ -60,6 +60,10 @@ public:
    
   bool IsBusy() override;
 
+  bool IsFree() override;
+
+  float GetBusyRate() override;
+
  void  SetActivateState(bool sta) override;
 
   // Open the gate with the given ID
@@ -88,7 +92,6 @@ private:
   // bool IsGateIdExist();
 
   // get the free space comparing to the total capacity
-  float GetBusyRate();
 
   // get the number of open gate
   int GetActiveGate();

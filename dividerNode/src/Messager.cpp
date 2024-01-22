@@ -374,7 +374,7 @@ void Messager::HandleUIMessage(int msgCode, int data)
             return;
         }
         Serial.println("Sending gate id to UI");
-        SendUIMessage(UI, DIVIDER_ID, ALLOC, std::to_string(cusListener->HandleUIRequest(data)));
+        SendUIMessage(UI, DIVIDER_ID, ALLOC, std::to_string(gateId));
 
         // TODO: Send amount of people to the gate!!!!!!!!!!!!!!!
 

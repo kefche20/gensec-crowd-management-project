@@ -5,7 +5,6 @@
 // Divider
 #define DIVIDER_ID 100
 
-
 // TODO: find a solution to store the topics temporary
 static const char *topic_gates = "gates_100";
 static const char *topic_gates_alloc = "gates_allocation";
