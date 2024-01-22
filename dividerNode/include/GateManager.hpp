@@ -54,8 +54,15 @@ private:
 public:
   // Constructor
   GateManager(int maxGateNum, int openThreshold, int closeThreshold);
+ 
 
   void SetSender(ISender *sender);
+   
+  bool IsBusy() override;
+
+  bool IsFree() override;
+
+  float GetBusyRate() override;
 
  void  SetActivateState(bool sta) override;
 
@@ -78,13 +85,13 @@ public:
 
   void HandleGateDataBeats(int gateId, int numOfPeople) override;
 
+
   void GateChats();
 
 private:
   // bool IsGateIdExist();
 
   // get the free space comparing to the total capacity
-  float GetFreeSpaceRate();
 
   // get the number of open gate
   int GetActiveGate();

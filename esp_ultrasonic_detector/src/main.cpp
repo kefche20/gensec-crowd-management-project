@@ -135,6 +135,9 @@ void callback(char *topic, byte *payload, unsigned int len_of_payload)
     message += (char)payload[i];
   }
 
+    Serial.println(message);
+
+
   if (strcmp(topic, MY_GATE_TOPIC) == 0)
   {
     myGate.sortInputCommand(message);

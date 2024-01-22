@@ -86,6 +86,8 @@ public:
 
     bool SendMessage(Topic topic, int srcId, int destId, int content, std::pair<int, int> pairContent) override;
 
+    bool SendUIMessage(Topic topic, int srcId, int command, std::string content);
+
     static bool ConnectWiFi(WiFiClient *wifi);
 
 private:
@@ -95,7 +97,7 @@ private:
 
     void HandleGateMessage(int srcId, GateMessage msgCode, int data);
 
-    void HandleUIMessage(UIMessage msgCode, int data);
+    void HandleUIMessage(int msgCode, int data);
 
     const char *SelectTopic(Topic topic);
 
@@ -133,6 +135,11 @@ private:
             // data 2 is the gate
             startPos = msg.find(':') + 1;
             endPos = msg.find('@');
+            readLen = endPos - startPos;
+            break;
+        case DATA_UI:
+            startPos = msg.find('+') + 1;
+            endPos = msg.find(';');
             readLen = endPos - startPos;
             break;
 

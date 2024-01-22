@@ -18,6 +18,7 @@ enum Topic
    DIVIDER_ROLE,
    DIVIDER_ALIVE,
    GATE,
+   GATE_ALLOC,
 };
 
 enum CONTENT_TYPE
@@ -26,7 +27,8 @@ enum CONTENT_TYPE
    DES_ID,
    MSG,
    DATA1,
-   DATA2
+   DATA2,
+   DATA_UI
 };
 
 enum DividerBoardcastMessage

@@ -1,58 +1,58 @@
 #include "CustomerManager.hpp"
 #define ERROR -1
+#include <Arduino.h> //TODO remove
 
 CustomerManager::CustomerManager(IDataCollector *localCollector, IRemoteDataCollector *remoteCollector) : isRequested(isRequested), control(IDLE_G), localCollector(localCollector), remoteCollector(remoteCollector), leastBusyGateId(0)
 {
 }
 
-void CustomerManager::HandleCustomerRequest(bool reqSta)
+void CustomerManager::SetSender(ISender *newSender)
 {
-    // only accept if is the leader
-    if (remoteCollector->GetRoleMode() == LEADER)
-    {
-        isRequested = reqSta;
-    }
+    this->sender = newSender;
 }
 
-void CustomerManager::ResponseGuidingRequest()
-// REVIEW -
+void CustomerManager::HandleCustomerRequest(int people_waiting)
 {
-    switch (control.GetState())
+    // // only accept if is the leader
+    // if (IsLeader())
+    // {
+    //     isRequested = true;
+    //     request_people = people_waiting;
+    //     ResponseGuidingRequest();
+    // }
+}
+int CustomerManager::HandleUIRequest(int people_waiting)
+{
+    // only accept if is the leader
+    if (IsLeader())
     {
-    case WAITING_REQUEST:
-        if (control.IsNewState())
-        {
-            control.Refresh();
-        }
+        isRequested = true;
+        request_people = people_waiting;
+        ResponseGuidingRequest();
 
-        if (isRequested)
-        {
-            control.UpdateState(RESPONSE);
-        }
+        // sending allocation command to the gates
+      sender->SendMessage(GATE_ALLOC, 000, leastBusyGateId,(int) ALLOC, people_waiting);
 
-        break;
+        return leastBusyGateId;
+    }
+    return -2;
+}
 
-    case RESPONSE:
-        if (control.IsNewState())
-        {
-            GetLeastBusyGateId();
-            control.Refresh();
-        }
+bool CustomerManager::IsLeader()
+{
+    return (remoteCollector->GetRoleMode() == LEADER);
+}
 
-        if (leastBusyGateId != ERROR)
-        // FIXME - response to request from UI
-        {
-            //  sender->SendMessage(UI, leastBusyGateId);
-        }
-
-        // request done
-        if (!isRequested)
-        {
-            //adding the number of people to the corresponding gate 
-            control.UpdateState(WAITING_REQUEST);
-        }
-
-        break;
+int CustomerManager::ResponseGuidingRequest()
+{
+    GetLeastBusyGateId();
+    if (leastBusyGateId != ERROR)
+    {
+        return leastBusyGateId;
+    }
+    else
+    {
+        return -1;
     }
 }
 
@@ -61,19 +61,29 @@ bool CustomerManager::GetLeastBusyGateId()
     std::pair<int, int> localLeastBusyGate = localCollector->GetLeastBusyGate();
     std::pair<int, int> remoteLeastBusyGate = remoteCollector->GetLeastBusyGate();
 
+    Serial.println("local least busy id & rate-------:");
+    Serial.println(localLeastBusyGate.first);
+    Serial.println(localLeastBusyGate.second);
+    Serial.println("remote least busy i & rate-----: ");
+    Serial.println(remoteLeastBusyGate.first);
+    Serial.println(remoteLeastBusyGate.second);
+
     if (localLeastBusyGate.first == ERROR && remoteLeastBusyGate.first == ERROR)
     // cancel
     {
+        leastBusyGateId = ERROR;
         return false;
     }
 
     bool sta = false;
-    // get the least busy gate id
-    if (localLeastBusyGate.second != ERROR && (localLeastBusyGate.second < remoteLeastBusyGate.second))
+
+    // get the least busy gate id - if there is no data of least busy rate, 100 is set as default
+    if (localLeastBusyGate.first != ERROR && (localLeastBusyGate.second < remoteLeastBusyGate.second))
     {
         leastBusyGateId = localLeastBusyGate.first;
         sta = true;
     }
+
     else if (remoteLeastBusyGate.second != ERROR && (remoteLeastBusyGate.second < localLeastBusyGate.second))
     {
         leastBusyGateId = remoteLeastBusyGate.first;

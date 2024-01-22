@@ -10,8 +10,6 @@
 
 #include <string>
 
-
-
 // Heartbeat
 #define BEATRATE 5000
 #define MAXOFFSET 10000
@@ -23,8 +21,8 @@
 #define TOPIC_DIVIDERS 1
 
 // free rate to open or close a gate
-#define OPEN_THRESHOLD_RATE 20
-#define CLOSE_THRESHOLD_RATE 80
+#define OPEN_THRESHOLD_RATE 80
+#define CLOSE_THRESHOLD_RATE 20
 
 WiFiClient espClient;
 // PubSubClient *mqttClient = new PubSubClient(espClient);
@@ -49,6 +47,8 @@ void setup()
   dividerManager.SetLocalCollector((ILocalCollector *)&gateManager);
   gateManager.SetSender((ISender *)&messager);
 
+  customerManager.SetSender((ISender*)&messager);
+
   // //network connection
   Messager::ConnectWiFi(&espClient);
   messager.SetupMQTT(mqtt_broker, mqtt_port, callback);
@@ -57,8 +57,9 @@ void setup()
   // //topic subscriptions
   messager.ConnectTopic(topic_dividers_role);
   messager.ConnectTopic(topic_dividers_alive);
+  messager.ConnectTopic(topic_ui);
   messager.ConnectTopic(topic_gates);
-
+  messager.ConnectTopic(topic_gates_alloc);
 }
 
 void loop()
@@ -102,9 +103,15 @@ void callback(char *topic, uint8_t *payload, unsigned int length)
     // read the gate message
     messager.ReadGateMessage(msg);
   }
-  else if (topic == topic_ui)
+  else if (strcmp(topic, topic_ui) == 0)
   {
-    // read message form the ui
+    if(dividerManager.GetRoleMode() == RoleMode::LEADER)
+    {
+      messager.ReadUIMessage(msg);
+    }
+    else{
+      Serial.println("Not a leader, cannot read UI message");
+    }
   }
 
   Serial.print("\n\n");
