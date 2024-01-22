@@ -30,7 +30,8 @@
 #define MY_MQTT_USERNAME "Nedyalko"
 #define MY_MQTT_PASSWORD "1234"
 
-#define MY_GATE_TOPIC "gates_100"
+#define MY_GATE_TOPIC "gates_200"
+#define MY_ALLOCATION_TOPIC "gates_allocation"
 
 #define EMPTY_STRING ""
 
@@ -51,7 +52,7 @@
 
 #define MY_ID "201"
 #define DIV_ID "200"
-#define ALL_ID "000"
+#define ALL_ID "0"
 
 #define COM_DELAY 1000
 #define DETECT_DELAY 100

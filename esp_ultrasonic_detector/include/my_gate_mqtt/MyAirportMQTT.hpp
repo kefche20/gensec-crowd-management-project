@@ -16,7 +16,7 @@ private:
 
 public:
     MyAirportMQTT *next;
-    MyAirportMQTT(WiFiClient &, const char *, int, const char *);
+    MyAirportMQTT(WiFiClient &, const char *, int, const char *, const char *, const char *);
     ~MyAirportMQTT();
     
     void setServer(const char *) override;

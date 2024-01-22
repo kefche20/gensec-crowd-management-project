@@ -1,9 +1,9 @@
 #include "../include/my_gate_mqtt/MyAirportMQTT.hpp"
 
 MyAirportMQTT::MyAirportMQTT(WiFiClient &the_client, const char *the_server, int the_port,
-                             const char *the_id)
+                             const char *the_id, const char *the_username, const char *the_password)
     : my_mqtt_client(the_client), esp_client(the_client), my_server(the_server),
-      my_net_port(the_port), my_id(the_id)
+      my_net_port(the_port), my_id(the_id), mqtt_username(the_username), mqtt_password(the_password)
 {
     ;
 }
@@ -15,8 +15,6 @@ MyAirportMQTT::~MyAirportMQTT()
 
 void MyAirportMQTT::setupMqtt(void (*externalCallback)(char *, byte *, unsigned int))
 {
-    mqtt_username = MY_MQTT_USERNAME;
-    mqtt_password = MY_MQTT_PASSWORD;
     my_mqtt_client.setServer(my_server, my_net_port);
     my_mqtt_client.setCallback(externalCallback);
     connectToMyNetwork();
@@ -53,11 +51,30 @@ void MyAirportMQTT::connectToMyNetwork()
         {
             Serial.println(id_to_connect);
             Serial.println("Connected!");
+            if (subscribeToMyNetwork(MY_GATE_TOPIC))
+            {
+                Serial.print("subscribed to ");
+                Serial.println(MY_GATE_TOPIC);
+            }
+            else
+            {
+                Serial.println("fail to subscribe gate");
+            }
+            
+            if (subscribeToMyNetwork(MY_ALLOCATION_TOPIC))
+            {
+                Serial.print("subscribed to ");
+                Serial.println(MY_ALLOCATION_TOPIC);
+            }
+            else
+            {
+                Serial.print("fail to subscribe alloc");
+            }        
         }
         else
         {
             Serial.print("fail status: ");
-            Serial.print(my_mqtt_client.state());
+            Serial.println(my_mqtt_client.state());
         }
         lastConnectingAttempt = millis();
     }

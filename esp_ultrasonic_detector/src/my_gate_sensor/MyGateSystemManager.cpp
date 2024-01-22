@@ -135,10 +135,7 @@ void MyGateSystemManager::decreaseQueue()
 
     if (my_queue < MAX_QUEUE_NUMBER)
     {
-        if (busy_state == 1)
-        {
-            busy_state = 0;
-        }
+        busy_state = 0;
     }
 
     checkIfBusy();
@@ -156,21 +153,23 @@ uint8_t MyGateSystemManager::getRegisterState()
 
 bool MyGateSystemManager::addQueueNr()
 {
-    if (my_queue >= MAX_QUEUE_NUMBER)
+    bool allowed = false;
+    int number = atoi(my_input_value.c_str());
+    if (busy_state == 1)
     {
-        Serial.println("GATE BUSY!");
-        return false;
+        allowed = false;
     }
-
-    Serial.println("ADD PERSON!");
-    my_queue = my_queue + 1;
-    return true;
+    else
+    {
+        Serial.println("ADD PERSON!");
+        my_queue = my_queue + number;
+        allowed = true;
+    }
+    return allowed;
 }
 
 void MyGateSystemManager::sortInputCommand(String message)
 {
-    Serial.println(message);
-
     static String message_buffer = "";
     for (char incoming_char : message)
     {
@@ -198,12 +197,19 @@ void MyGateSystemManager::readInputSourceAndDestination(String message)
     int indicator_1;
     int indicator_2;
 
+    my_source_id = "";
+    my_destination_id = "";
+    my_message = "";
+
     indicator_1 = message.indexOf(ARROW_CHAR);
     my_source_id = message.substring(0, indicator_1);
     indicator_2 = message.indexOf(SPLIT_CHAR, indicator_1 + 1);
     my_destination_id = message.substring(indicator_1 + 1, indicator_2);
     my_message = message.substring(indicator_2 + 1);
-    Serial.print(my_destination_id);
+    Serial.print("source: ");
+    Serial.println(my_source_id);
+    Serial.print("to: ");
+    Serial.println(my_destination_id);
 
     readCommandAndValue(my_message);
 }
@@ -212,6 +218,10 @@ void MyGateSystemManager::readCommandAndValue(String message)
 {
     int indicator_3;
     int indicator_4;
+
+    my_input_command = "";
+    my_input_value = "";
+
     indicator_3 = message.indexOf(DATA_CHAR);
 
     if (indicator_3 != -1)
@@ -225,10 +235,15 @@ void MyGateSystemManager::readCommandAndValue(String message)
         my_input_command = message;
     }
 
-    if (my_destination_id == MY_ID || my_destination_id == ALL_ID)
+    if ((my_destination_id == MY_ID) || (my_destination_id == ALL_ID))
     {
         operateQueue();
     }
+
+    Serial.print("command: ");
+    Serial.println(my_input_command);
+    Serial.print("value: ");
+    Serial.println(my_input_value);
 }
 
 void MyGateSystemManager::operateQueue()
@@ -262,16 +277,17 @@ void MyGateSystemManager::operateQueue()
 
     if (my_input_command == COMMAND_TO_ADD)
     {
-        if (addQueueNr() == false)
+        if ((open_state == 1) && (register_state == 1))
         {
-            if (busy_state == 0)
+            bool to_add = addQueueNr();
+            if (!to_add)
             {
                 busy_state = 1;
             }
         }
     }
-    checkIfOpen();
     checkIfBusy();
+    checkIfOpen();
 }
 
 void MyGateSystemManager::checkIfOpen()
@@ -290,12 +306,25 @@ void MyGateSystemManager::checkIfOpen()
 
 void MyGateSystemManager::checkIfBusy()
 {
-    if (busy_state == 0)
+    if (my_queue >= MAX_QUEUE_NUMBER)
     {
-        digitalWrite(BUSY_LED_PIN, LOW);
+        busy_state = 1;
     }
-    else
+
+    switch (busy_state)
     {
+    case 0:
+        /* code */
+        digitalWrite(BUSY_LED_PIN, LOW);
+        break;
+
+    case 1:
+        /* code */
         digitalWrite(BUSY_LED_PIN, HIGH);
+        Serial.println("GATE BUSY!");
+        break;
+
+    default:
+        break;
     }
 }
