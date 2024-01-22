@@ -106,6 +106,8 @@ private:
 
     int DeactivateADivider();
 
+    int GetActiveDivider();
+    
     // logic of acitivating and deactivating - used in LEDADER STATE ONLY
     void ControlDividerActivation();
 };

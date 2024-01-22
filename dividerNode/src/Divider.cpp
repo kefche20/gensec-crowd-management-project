@@ -2,7 +2,7 @@
 #define MAX_BUSY_RATE 100
 #define MIN_BUSY_RATE 0
 
-Divider::Divider(int id, bool isLeader) : id(id), isLeader(isLeader), isActive(isActive)
+Divider::Divider(int id, bool isLeader) : id(id), isLeader(isLeader), isActive(false)
 {
     // intialize leastBusyGate id & value;
     leastBusyGate.first = 000;

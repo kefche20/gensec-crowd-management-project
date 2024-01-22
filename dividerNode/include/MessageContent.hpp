@@ -18,6 +18,7 @@ enum Topic
    DIVIDER_ROLE,
    DIVIDER_ALIVE,
    GATE,
+   GATE_ALLOC,
 };
 
 enum CONTENT_TYPE

@@ -90,7 +90,6 @@ bool Messager::ConnectWiFi(WiFiClient *wifi)
     return true;
 }
 
-
 bool Messager::SendMessage(Topic topic, int srcId, int content)
 {
     const char *selectTopic = "default";
@@ -105,26 +104,22 @@ bool Messager::SendMessage(Topic topic, int srcId, int content)
 
 bool Messager::SendMessage(Topic topic, int srcId, int destId, int content)
 {
-    Serial.println("send message");
     const char *selectTopic = "default";
     selectTopic = SelectTopic(topic);
-    Serial.println("selectTopic-------: ");
-    Serial.println(selectTopic);
 
     char data[200];
     sprintf(data, "&%s>%s-%s;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str());
-    Serial.println("send B");
     mqttClient->publish(selectTopic, data);
-    Serial.println("send message");
 
     return true;
 }
 
 bool Messager::SendMessage(Topic topic, int srcId, int destId, int content, int sendedData)
 {
+    Serial.println("send message !!!!!!!!!!!");
+
     const char *selectTopic = "default";
     selectTopic = SelectTopic(topic);
-
     char data[200];
     sprintf(data, "&%s>%s-%s+%s:;", std::to_string(srcId).c_str(), std::to_string(destId).c_str(), std::to_string(content).c_str(), std::to_string(sendedData).c_str());
     mqttClient->publish(selectTopic, data);
@@ -303,13 +298,22 @@ void Messager::ReadGateMessage(std::string msg)
     msgCode = std::stoi(ExtractContent(MSG, msg));
 
     Serial.println(msg.c_str());
-    // data = std::stoi(ExtractContent(DATA, msg));
 
     // join network - make friend - optimize this code
     // FIXME: change the check id from the customer guider
     if (desId == divListener->GetId())
     {
-        HandleGateMessage(srcId, (GateMessage)msgCode, data);
+        switch (msgCode)
+        {
+        case REGISTER:
+            gateListener->HandleGateRegister(srcId);
+            break;
+        case DATA:
+            data = std::stoi(ExtractContent(DATA1, msg));
+            gateListener->HandleGateDataBeats(srcId, data);
+        default:
+            break;
+        }
     }
     else
     {
@@ -319,17 +323,6 @@ void Messager::ReadGateMessage(std::string msg)
 
 void Messager::HandleGateMessage(int srcId, GateMessage msgCode, int data)
 {
-
-    switch (msgCode)
-    {
-    case REGISTER:
-        gateListener->HandleGateRegister(srcId);
-        break;
-    case DATA:
-        gateListener->HandleGateDataBeats(srcId, data);
-    default:
-        break;
-    }
 }
 
 void Messager::ReadUIMessage(std::string msg)
@@ -359,21 +352,22 @@ void Messager::HandleUIMessage(int msgCode, int data)
 {
     Serial.println(msgCode);
 
-    int gateId;
+    int gateId = -1;
+    int numOfPeople = -1;
     switch (msgCode)
     {
     case SCANNED:
         Serial.println("New people waiting for allocation:");
         // TODO: maybe introduce new method for sending data correctly according to the protocol
-        cusListener->HandleUIRequest(data);
-        if(gateId == -1)
+        gateId = cusListener->HandleUIRequest(data);
+        if (gateId == -1)
         {
             Serial.println("No free gates");
             // TODO: no free gate, tell this to the UI
             SendUIMessage(UI, DIVIDER_ID, ALLOC, "000");
             return;
         }
-        else if(gateId == -2)
+        else if (gateId == -2)
         {
             // I am not the leader
             Serial.println("I am not the leader");
@@ -383,6 +377,7 @@ void Messager::HandleUIMessage(int msgCode, int data)
         SendUIMessage(UI, DIVIDER_ID, ALLOC, std::to_string(cusListener->HandleUIRequest(data)));
 
         // TODO: Send amount of people to the gate!!!!!!!!!!!!!!!
+
         break;
     default:
         break;
@@ -404,6 +399,10 @@ const char *Messager::SelectTopic(Topic topic)
         break;
     case GATE:
         return topic_gates;
+        break;
+    case GATE_ALLOC:
+        Serial.println("send to allocation topic");
+        return topic_gates_alloc;
         break;
     default:
         return "default";

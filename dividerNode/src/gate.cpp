@@ -1,6 +1,6 @@
 #include "Gate.hpp"
 #include "Arduino.h"
-Gate::Gate(int id) : id(id), isOpen(false), peopleCount(0)
+Gate::Gate(int id) : id(id), isOpen(false), peopleCount(0), maxCapacity(10)
 {
 }
 
@@ -52,7 +52,7 @@ bool Gate::refreshCount(int count)
       return false;
   }
     
-  Serial.println("refresh people count---------!");
+//  Serial.println("refresh people count---------!");
   peopleCount = count;
 
   return true;

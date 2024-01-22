@@ -14,14 +14,14 @@ void GateManager::SetSender(ISender *newSender)
 
 void GateManager::SetActivateState(bool sta)
 {
-    if (sta == true)
-    {
-        Serial.println("activate gate state---------: ");
-    }
-    else
-    {
-        Serial.println("deactivate gate state---------: ");
-    }
+    // if (sta == true)
+    // {
+    //     Serial.println("activate gate state---------: ");
+    // }
+    // else
+    // {
+    //     Serial.println("deactivate gate state---------: ");
+    // }
     isActive = sta;
 }
 
@@ -39,24 +39,29 @@ void GateManager::SetGateState(int gateId, bool sta)
     }
 }
 
+bool GateManager::IsBusy()
+{
+    return (generalState == ALL_IN_DUTY && GetBusyRate() > openThresholdRate);
+}
+
 std::pair<int, int> GateManager::GetLeastBusyGate()
 {
     std::pair<int, int> leastBusyGate;
-    leastBusyGate.first = -1; // first is id
-    leastBusyGate.second = 0; // second is busyRate
+    leastBusyGate.first = -1;   // first is id
+    leastBusyGate.second = 100; // second is busyRate
     Serial.println("GetLeastBusyGate");
     for (auto &gate : gates)
     {
-            Serial.println("1");
         if (gate.GetBusyRate() < leastBusyGate.second && gate.GetOpenSta())
         // update the id and rate of the gate with lower busy rate
         {
-                Serial.println("2");
             leastBusyGate.first = gate.GetId();
             leastBusyGate.second = gate.GetBusyRate();
+            Serial.println("check local least busy gate-------: ");
+            Serial.println(leastBusyGate.first);
+            Serial.println(leastBusyGate.second);
         }
     }
-        Serial.println("3");
     return leastBusyGate;
 }
 
@@ -68,7 +73,7 @@ bool GateManager::Add(int id)
         return false;
     }
 
-    Serial.println("come into add gate---!");
+    //  Serial.println("come into add gate---!");
 
     bool sta = false;
     auto result = std::find(gates.begin(), gates.end(), id);
@@ -80,11 +85,11 @@ bool GateManager::Add(int id)
         metaAliveTracker.Add(id);
         metaAliveTracker.StartTracking(id);
         sta = true;
-        Serial.println("add gate success----!");
+        //     Serial.println("add gate success----!");
     }
     else
     {
-        Serial.println("add gates fail---!");
+        //     Serial.println("add gates fail---!");
     }
 
     return sta;
@@ -139,14 +144,14 @@ void GateManager::allocatePersonToGate()
 */
 void GateManager::GateChats()
 {
-
+    static int preBusyRate = 0;
     switch (traffic.state)
     {
     case IDLE_T:
     {
         if (traffic.IsNewState())
         {
-            Serial.println("IDLE STATE!");
+         //   Serial.println("IDLE STATE!");
             traffic.ClearEntryFlag();
         }
 
@@ -156,6 +161,8 @@ void GateManager::GateChats()
         // FIXME - add is active to the condition
         if (gates.size() != 0 && isActive)
         {
+            sender->SendMessage(GATE, 000, 000, CLOSEGATE);
+            sender->SendMessage(GATE,000,000,100);
             traffic.state = NORMAL;
         }
 
@@ -165,7 +172,7 @@ void GateManager::GateChats()
     {
         if (traffic.IsNewState())
         {
-            Serial.println("NORMAL STATE");
+        //    Serial.println("NORMAL STATE");
             traffic.ClearEntryFlag();
         }
 
@@ -178,13 +185,27 @@ void GateManager::GateChats()
         {
             generalState = PARTY_DUTY;
         }
+        else if (numOfActiveGate == gates.size())
+        {
+            generalState = ALL_IN_DUTY;
+        }
         else if (numOfActiveGate == 0)
         // no gate is on duty - the situation might happens when the only gate open is falling out
         {
             generalState = ALL_FREE;
         }
 
-        // FIXME - add isActive to condition
+       
+
+        // if (preBusyRate != busyRate)
+        // {
+        //     Serial.print("busyRate---: ");
+        //     Serial.println(busyRate);
+        //     Serial.print("general state---: ");
+        //     Serial.println(generalState);
+        //     preBusyRate = busyRate;
+        // }
+         // FIXME - add isActive to condition
         if (!isActive || gates.size() == 0)
         // stop the open/close mechanism when divider is deactivate and close all gate
         {
@@ -192,20 +213,17 @@ void GateManager::GateChats()
             sender->SendMessage(GATE, 000, 000, CLOSEGATE);
             traffic.state = IDLE_T;
         }
-
         // more gate in duty
         else if (busyRate > openThresholdRate && generalState != ALL_IN_DUTY)
         {
-            Serial.print("Busy rate for open----- :");
-            Serial.println(busyRate);
+
             traffic.state = CROWD;
         }
 
         // when free space is less than a
-        else if (busyRate < closeThresholdRate  && generalState != ONE_IN_DUTY)
+        else if (busyRate < closeThresholdRate && generalState != ONE_IN_DUTY)
         {
-            Serial.print("Busy rate for close gate----- :");
-            Serial.println(busyRate);
+
             traffic.state = UNOCCUPIED;
         }
 
@@ -217,7 +235,7 @@ void GateManager::GateChats()
         {
             if (traffic.IsNewState())
             {
-                Serial.println("CROWD STATE");
+                //  Serial.println("CROWD STATE");
                 traffic.ClearEntryFlag();
             }
 
@@ -227,13 +245,13 @@ void GateManager::GateChats()
             if (openGateId != -1)
             {
                 sender->SendMessage(GATE, 000, openGateId, OPENGATE);
-                Serial.print("Send open gate id--------- :");
-                Serial.println(openGateId);
+                // Serial.print("Send open gate id--------- :");
+                // Serial.println(openGateId);
             }
             else
             {
                 generalState = ALL_IN_DUTY;
-                Serial.println("fail to open more gate -------!");
+                //   Serial.println("fail to open more gate -------!");
             }
 
             if (GetBusyRate() < openThresholdRate || generalState == ALL_IN_DUTY)
@@ -247,7 +265,7 @@ void GateManager::GateChats()
         // whenever the gate manager is in this state, an open gate will be close
         if (traffic.IsNewState())
         {
-            Serial.println("UNOCCUPIED STATE");
+          //  Serial.println("UNOCCUPIED STATE");
             traffic.ClearEntryFlag();
         }
 
@@ -256,12 +274,12 @@ void GateManager::GateChats()
         {
             int closeGateId = closeAnIdleGate();
             sender->SendMessage(GATE, 000, closeGateId, CLOSEGATE);
-            Serial.println("Send close gate id-----------:");
-            Serial.println(closeGateId);
+            // Serial.println("Send close gate id-----------:");
+            // Serial.println(closeGateId);
         }
         else
         {
-            Serial.println("fail to close more gate--------!");
+            //   Serial.println("fail to close more gate--------!");
             generalState = ONE_IN_DUTY;
         }
 
@@ -280,7 +298,6 @@ void GateManager::GateChats()
 
 void GateManager::HandleGateRegister(int id)
 {
-
     // add new gate to list
     Serial.print("add new gate: ");
     Serial.println(id);
@@ -295,6 +312,8 @@ void GateManager::HandleGateRegister(int id)
         Serial.println("sth go wrong----------!");
         // sender->SendMessage(GATE, id, NACK);
     }
+
+
 }
 
 void GateManager::HandleGateDataBeats(int gateId, int numOfPeople)

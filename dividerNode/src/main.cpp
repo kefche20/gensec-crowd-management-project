@@ -47,6 +47,8 @@ void setup()
   dividerManager.SetLocalCollector((ILocalCollector *)&gateManager);
   gateManager.SetSender((ISender *)&messager);
 
+  customerManager.SetSender((ISender*)&messager);
+
   // //network connection
   Messager::ConnectWiFi(&espClient);
   messager.SetupMQTT(mqtt_broker, mqtt_port, callback);
@@ -57,7 +59,7 @@ void setup()
   messager.ConnectTopic(topic_dividers_alive);
   messager.ConnectTopic(topic_ui);
   messager.ConnectTopic(topic_gates);
-
+  messager.ConnectTopic(topic_gates_alloc);
 }
 
 void loop()

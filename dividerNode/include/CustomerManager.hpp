@@ -35,6 +35,8 @@ private:
 
 public:
     CustomerManager(IDataCollector *localCollector, IRemoteDataCollector *remoteCollector);
+    
+    void SetSender(ISender *sender);
 
     virtual void HandleCustomerRequest(int people_waiting);
 

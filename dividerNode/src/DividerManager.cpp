@@ -5,7 +5,7 @@ bool IsLeader(Divider divider)
     return divider.IsLeader();
 }
 
-DividerManager::DividerManager(int id) : id(id), metaAliveTracker(20, this), sender(nullptr), localCollector(nullptr), role()
+DividerManager::DividerManager(int id) : id(id), metaAliveTracker(20, this), sender(nullptr), localCollector(nullptr), role(), trafficState(IDLE_T)
 {
     timer.SetInterval(WAIT_INTERVAL);
 }
@@ -37,13 +37,14 @@ std::pair<int, int> DividerManager::GetLeastBusyGate()
 {
     // least busy gate initialization
     std::pair<int, int> leastBusyGate;
-    leastBusyGate.first = -1;  // id
-    leastBusyGate.second = -1; // busy rate
+    leastBusyGate.first = -1;   // id
+    leastBusyGate.second = 100; // busy rate
 
     for (auto &divider : dividers)
     {
         std::pair<int, int> checkedGate = divider.GetGateData();
-        if (checkedGate.second < leastBusyGate.second)
+        // Serial.println("rem");
+        if (checkedGate.second < leastBusyGate.second && divider.IsAcive())
         // update least busy gate which have the lower busy rate
         {
             leastBusyGate = checkedGate;
@@ -157,7 +158,6 @@ void DividerManager::dividersChat()
             Serial.println("being member!");
             // destroy all current heart
             metaAliveTracker.RemoveAll();
-            localCollector->SetActivateState(true);
             // add and start tracking the leader heart
             metaAliveTracker.Add(SearchLeaderId());
             metaAliveTracker.StartTracking(SearchLeaderId());
@@ -347,7 +347,7 @@ void DividerManager::HandleMemberAlive(int memId, std::pair<int, int> data)
 
 void DividerManager::HandleActivateCommand(bool sta)
 {
-    localCollector->SetActivateState(true);
+    localCollector->SetActivateState(sta);
 }
 
 bool DividerManager::JustifyMember(int memberId)
@@ -406,6 +406,21 @@ int DividerManager::SearchLeaderId()
     return -1;
 }
 
+int DividerManager::GetActiveDivider()
+{
+    int numOfActive = 0;
+
+    for (auto &divider : dividers)
+    {
+        if (divider.IsAcive())
+        {
+            numOfActive++;
+        }
+    }
+
+    return numOfActive;
+}
+
 bool DividerManager::IsMemberExist(int checkId)
 {
     auto divider = std::find(dividers.begin(), dividers.end(), checkId);
@@ -444,8 +459,17 @@ int DividerManager::GetGeneralBusyRate()
         }
     }
 
-    // calcuate the general busy rate
-    return (int)(((float)sum / (100.0 * numOfActiveDivider)) * 100.0);
+    Serial.println("Get general busy rate--------------: ");
+    Serial.println(sum);
+    Serial.println(numOfActiveDivider);
+    int busyRate = 100;
+    if (numOfActiveDivider != 0)
+    {
+        busyRate = (int)(((float)sum / (100.0 * numOfActiveDivider)) * 100.0);
+        // calcuate the general busy rate
+    }
+
+    return busyRate;
 }
 
 int DividerManager::ActivateADivider()
@@ -478,21 +502,44 @@ int DividerManager::DeactivateADivider()
 
 void DividerManager::ControlDividerActivation()
 {
+    static TrafficState preState = CROWD;
+    static int preBusyRate = 100;
     switch (trafficState)
     {
 
     case IDLE_T:
-
-        if (dividers.size() > 0)
+        if (preState != trafficState)
         {
-            trafficState = IDLE_T;
+            Serial.println("DIVIDER STATE: IDLE_T");
+            preState = trafficState;
+        }
+
+        if (dividers.size() > 0 && localCollector->IsBusy())
+        {
+            trafficState = NORMAL;
         }
 
         break;
     case NORMAL:
-        if (dividers.size() == 0)
+    {
+        if (preState != trafficState)
+        {
+            Serial.println("DIVIDER STATE: NORMAL");
+            preState = trafficState;
+        }
+
+        if (dividers.size() == 0 || !localCollector->IsBusy())
+        // go back to idle if normal is not busy anymore
         {
             trafficState = IDLE_T;
+        }
+
+        int busyRate = GetGeneralBusyRate();
+        if (preBusyRate != busyRate)
+        {
+            Serial.println("General busy rate ----:");
+            Serial.println(busyRate);
+            preBusyRate = busyRate;
         }
 
         if (GetGeneralBusyRate() > 80)
@@ -500,33 +547,44 @@ void DividerManager::ControlDividerActivation()
             trafficState = CROWD;
         }
 
-        if (GetGeneralBusyRate() < 20)
+        else if (GetGeneralBusyRate() < 20 )
         {
             trafficState = UNOCCUPIED;
         }
 
         break;
-    case CROWD:
-    //REVIEW - it will get stuck at the crowd if still needed for divider active 
-    {
-        // search for a divider to activate
-        int activatedId = ActivateADivider();
-
-        if (activatedId != -1)
-        // send message to activate the divider if can find more divider is available for activate
-        {
-            sender->SendMessage(DIVIDER_ROLE, id, activatedId, ACTIVATE);
-        }
-
-        if (GetGeneralBusyRate() < 20)
-        // stay activate more divider until the busy rate of all least busy gate smaller than 50%
-        {
-            trafficState = NORMAL;
-        }
     }
-    break;
+    case CROWD:
+        // REVIEW - it will get stuck at the crowd if still needed for divider active
+        {
+            if (preState != trafficState)
+            {
+                Serial.println("DIVIDER STATE: CROWD");
+                preState = trafficState;
+            }
+            // search for a divider to activate
+            int activatedId = ActivateADivider();
+
+            if (activatedId != -1)
+            // send message to activate the divider if can find more divider is available for activate
+            {
+                sender->SendMessage(DIVIDER_ROLE, id, activatedId, ACTIVATE);
+            }
+
+            if (GetGeneralBusyRate() < 80)
+            // stay activate more divider until the busy rate of all least busy gate smaller than 50%
+            {
+                trafficState = NORMAL;
+            }
+        }
+        break;
     case UNOCCUPIED:
     {
+        if (preState != trafficState)
+        {
+            Serial.println("DIVIDER STATE: UNOCCUPIED");
+            preState = trafficState;
+        }
         // search for a divider to deactivate
         int deactivateId = DeactivateADivider();
 

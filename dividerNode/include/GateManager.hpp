@@ -54,8 +54,11 @@ private:
 public:
   // Constructor
   GateManager(int maxGateNum, int openThreshold, int closeThreshold);
+ 
 
   void SetSender(ISender *sender);
+   
+  bool IsBusy() override;
 
  void  SetActivateState(bool sta) override;
 
@@ -77,6 +80,7 @@ public:
   void HandleGateRegister(int id) override;
 
   void HandleGateDataBeats(int gateId, int numOfPeople) override;
+
 
   void GateChats();
 

@@ -17,6 +17,8 @@ class ILocalCollector: public IDataCollector
 {
     public:
     virtual void SetActivateState(bool sta) = 0;
+
+    virtual bool IsBusy() = 0;
 };
 
 class IRemoteDataCollector : public IDataCollector
