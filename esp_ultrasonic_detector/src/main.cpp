@@ -141,10 +141,12 @@ void callback(char *topic, byte *payload, unsigned int len_of_payload)
   if (strcmp(topic, MY_GATE_TOPIC) == 0)
   {
     myGate.sortInputCommand(message);
+    message = EMPTY_STRING;
   }
 
   if (strcmp(topic, MY_ALLOCATION_TOPIC) == 0)
   {
     myGate.sortInputCommand(message);
+    message = EMPTY_STRING;
   }
 }

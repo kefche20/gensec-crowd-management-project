@@ -155,7 +155,7 @@ bool MyGateSystemManager::addQueueNr()
 {
     bool allowed = false;
     int number = atoi(my_input_value.c_str());
-    if (busy_state == 1)
+    if ((busy_state == 1) || (my_queue >= MAX_QUEUE_NUMBER))
     {
         allowed = false;
     }
@@ -239,15 +239,15 @@ void MyGateSystemManager::readCommandAndValue(String message)
     {
         operateQueue();
     }
-
-    Serial.print("command: ");
-    Serial.println(my_input_command);
-    Serial.print("value: ");
-    Serial.println(my_input_value);
 }
 
 void MyGateSystemManager::operateQueue()
 {
+    Serial.print("command: ");
+    Serial.println(my_input_command);
+    Serial.print("value: ");
+    Serial.println(my_input_value);
+
     if (my_input_command == COMMAND_TO_OPEN)
     {
         if (open_state == 0)
