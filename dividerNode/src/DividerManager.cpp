@@ -156,6 +156,8 @@ void DividerManager::dividersChat()
         // start to keep track on the leader hearbeat
         {
             Serial.println("being member!");
+            localCollector->SetActivateState(false);
+
             // destroy all current heart
             metaAliveTracker.RemoveAll();
             // add and start tracking the leader heart
@@ -461,12 +463,20 @@ int DividerManager::GetGeneralBusyRate()
             numOfActiveDivider++;
         }
     }
+    static int preBusyRate = 100;
 
     int busyRate = 100;
     if (numOfActiveDivider != 0)
     {
         busyRate = (int)(((float)sum / (100.0 * numOfActiveDivider)) * 100.0);
         // calcuate the general busy rate
+    }
+
+    if (preBusyRate != busyRate)
+    {
+        Serial.println("General busy rate ----:");
+        Serial.println(busyRate);
+        preBusyRate = busyRate;
     }
 
     return busyRate;
@@ -479,6 +489,8 @@ int DividerManager::ActivateADivider()
         if (!divider.IsAcive())
         {
             divider.SetActiveState(true);
+            Serial.println("ACTIVATE NEW DIVIDDER SUCCESSFULY!");
+
             return divider.GetId();
         }
     }
@@ -503,7 +515,7 @@ int DividerManager::DeactivateADivider()
 void DividerManager::ControlDividerActivation()
 {
     static TrafficState preState = CROWD;
-    static int preBusyRate = 100;
+    static int preSize = 0;
     switch (trafficState)
     {
 
@@ -514,13 +526,22 @@ void DividerManager::ControlDividerActivation()
             preState = trafficState;
         }
 
+        if (preSize != dividers.size())
+        {
+            preSize = dividers.size();
+            Serial.print("number of member divider: ");
+            Serial.println(preSize);
+        }
+
         if (dividers.size() > 0 && localCollector->IsBusy())
         // only start the logic when the current gate is too busy
         {
-            for(auto &divider:dividers)
+            for (auto &divider : dividers)
             {
                 divider.SetActiveState(false);
-                sender->SendMessage(DIVIDER_ROLE,id,divider.GetId(),DEACTIVATE);
+                sender->SendMessage(DIVIDER_ROLE, id, divider.GetId(), DEACTIVATE);
+                Serial.print("send deactivate to divider: ");
+                Serial.println(divider.GetId());
             }
             trafficState = NORMAL;
         }
@@ -542,19 +563,13 @@ void DividerManager::ControlDividerActivation()
         }
 
         int busyRate = GetGeneralBusyRate();
-        if (preBusyRate != busyRate)
-        {
-            Serial.println("General busy rate ----:");
-            Serial.println(busyRate);
-            preBusyRate = busyRate;
-        }
 
         if (busyRate > 80 && localCollector->GetBusyRate() > 80)
         {
             trafficState = CROWD;
         }
 
-        else if (busyRate < 30 && busyRate < 30)
+        else if (busyRate < 30 && localCollector->GetBusyRate() < 30)
         // only close more gate when main divider is less busy
         {
             trafficState = UNOCCUPIED;

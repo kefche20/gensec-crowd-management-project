@@ -9,7 +9,7 @@ bool Gate::operator==(int id)
   return this->id == id;
 }
 
-bool Gate::operator==(const Gate& gate)
+bool Gate::operator==(const Gate &gate)
 {
   return this->id == gate.id;
 }
@@ -47,13 +47,16 @@ void Gate::addPerson(int numOfPeople)
 
 bool Gate::refreshCount(int count)
 {
-  if(peopleCount > maxCapacity)
+
+  if (peopleCount >= maxCapacity)
   {
-      return false;
+
+    return false;
   }
-    
-//  Serial.println("refresh people count---------!");
+
   peopleCount = count;
+
+  //  Serial.println("refresh people count---------!");
 
   return true;
 }
