@@ -3,7 +3,7 @@
 #include "algorithm"
 #include <Arduino.h>
 
-GateManager::GateManager(int maxGateNum, int openThreshold, int closeThreshold) : maxGateNum(maxGateNum), openThresholdRate(openThreshold), closeThresholdRate(closeThreshold), generalState(ALL_FREE), metaAliveTracker(10, this)
+GateManager::GateManager(int maxGateNum, int openThreshold, int closeThreshold) : maxGateNum(maxGateNum), openThresholdRate(openThreshold), closeThresholdRate(closeThreshold), generalState(ALL_FREE), metaAliveTracker(10, this), isActive(false)
 {
 }
 
@@ -174,6 +174,9 @@ void GateManager::GateChats()
         if (traffic.IsNewState())
         {
             //   Serial.println("IDLE STATE!");
+            // start by closing all gates
+            CloseAllGate();
+            sender->SendMessage(GATE, 000, 000, CLOSEGATE);
             traffic.ClearEntryFlag();
         }
 
@@ -183,7 +186,6 @@ void GateManager::GateChats()
         // FIXME - add is active to the condition
         if (gates.size() != 0 && isActive)
         {
-            sender->SendMessage(GATE, 000, 000, CLOSEGATE);
             traffic.state = NORMAL;
         }
 
@@ -204,6 +206,7 @@ void GateManager::GateChats()
         if (numOfActiveGate < gates.size() && numOfActiveGate > 1)
         // partly DUTY WHEN there are more than one gate active - prevent from keep jumping to CROWD when no more gate can be opened or there is only one gate left
         {
+
             generalState = PARTY_DUTY;
         }
         else if (numOfActiveGate == gates.size())
@@ -229,7 +232,6 @@ void GateManager::GateChats()
         // stop the open/close mechanism when divider is deactivate and close all gate
         {
             CloseAllGate();
-            sender->SendMessage(GATE, 000, 000, CLOSEGATE);
             traffic.state = IDLE_T;
         }
         // more gate in duty
@@ -264,8 +266,8 @@ void GateManager::GateChats()
             if (openGateId != -1)
             {
                 sender->SendMessage(GATE, 000, openGateId, OPENGATE);
-                // Serial.print("Send open gate id--------- :");
-                // Serial.println(openGateId);
+                Serial.print("Send open gate id--------- :");
+                Serial.println(openGateId);
             }
             else
             {
